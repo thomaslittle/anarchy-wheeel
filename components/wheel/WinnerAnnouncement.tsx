@@ -11,23 +11,38 @@ interface WinnerAnnouncementProps {
   wheelRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export function WinnerAnnouncement({ 
-  winner, 
-  winnerText, 
-  onComplete, 
-  duration = 5000
+export function WinnerAnnouncement({
+  winner,
+  winnerText,
+  onComplete,
+  duration = 5000,
+  wheelRef
 }: WinnerAnnouncementProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const [wheelPosition, setWheelPosition] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
   useEffect(() => {
     if (winner) {
       setShouldRender(true);
+
+      // Calculate wheel position if wheelRef is provided
+      if (wheelRef?.current) {
+        const rect = wheelRef.current.getBoundingClientRect();
+        setWheelPosition({
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+
       // Small delay to ensure DOM is ready
       const showTimer = setTimeout(() => {
         setIsVisible(true);
       }, 10);
-      
+
+      // Auto-hide after 5 seconds
       const hideTimer = setTimeout(() => {
         setIsVisible(false);
         // Clean up after fade out animation completes
@@ -35,7 +50,7 @@ export function WinnerAnnouncement({
           setShouldRender(false);
           onComplete?.();
         }, 300);
-      }, duration);
+      }, 5000);
 
       return () => {
         clearTimeout(showTimer);
@@ -45,26 +60,37 @@ export function WinnerAnnouncement({
       setIsVisible(false);
       setShouldRender(false);
     }
-  }, [winner, duration, onComplete]);
+  }, [winner, wheelRef, onComplete]);
 
   if (!winner || !shouldRender) return null;
 
   const displayText = winnerText.replace(/{winner}/g, winner);
   const textParts = displayText.split('\n');
 
+  // Use wheel position if available, otherwise fallback to full screen
+  const useWheelPosition = wheelRef?.current && wheelPosition.width > 0;
+
   return (
-    <div 
+    <div
       className={cn(
-        "fixed inset-0 z-50 pointer-events-none",
+        "absolute z-50 pointer-events-none",
         "flex items-center justify-center",
         "transition-opacity duration-300 ease-in-out",
-        isVisible ? "opacity-100" : "opacity-0"
+        isVisible ? "opacity-100" : "opacity-0",
+        !useWheelPosition && "inset-0"
       )}
       style={{
-        willChange: 'opacity'
+        willChange: 'opacity',
+        ...(useWheelPosition ? {
+          left: wheelPosition.x + wheelPosition.width / 2,
+          top: wheelPosition.y + wheelPosition.height / 2,
+          transform: 'translate(-50%, -50%)',
+          width: 'auto',
+          height: 'auto'
+        } : {})
       }}
     >
-      <div 
+      <div
         className={cn(
           "bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]",
           "text-white font-bold text-center",
@@ -72,8 +98,8 @@ export function WinnerAnnouncement({
           "border-4 border-white/20",
           "backdrop-blur-sm",
           "transform transition-all duration-600 ease-out",
-          isVisible 
-            ? "scale-100 translate-y-0" 
+          isVisible
+            ? "scale-100 translate-y-0"
             : "scale-75 translate-y-4",
           "whitespace-pre-line",
           // Responsive padding and sizing
@@ -94,9 +120,9 @@ export function WinnerAnnouncement({
           // Calculate responsive font sizes based on content length and line count
           const totalLines = textParts.length;
           const lineLength = line.length;
-          
+
           let baseFontSize = 'text-xl'; // Default
-          
+
           if (totalLines === 1) {
             // Single line - scale based on length
             if (lineLength <= 15) baseFontSize = 'text-2xl md:text-3xl';
@@ -122,7 +148,7 @@ export function WinnerAnnouncement({
               baseFontSize = 'text-base md:text-lg';
             }
           }
-          
+
           return (
             <div key={index} className={cn(
               "leading-tight",
