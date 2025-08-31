@@ -26,6 +26,7 @@ import { DraggableSection } from '@/components/ui/DraggableSection';
 import { LayoutToggle } from '@/components/ui/LayoutToggle';
 
 import { SettingsModal } from '@/components/settings/SettingsModal';
+import { LayoutControlPanel } from '@/components/ui/LayoutControlPanel';
 
 import { cn } from '@/lib/utils';
 
@@ -199,12 +200,22 @@ export default function Home() {
           {layoutManager.isDragMode ? (
             // Drag Mode Layout
             <>
+              {/* Layout Control Panel */}
+              <LayoutControlPanel
+                sectionLayouts={layoutManager.sectionLayouts}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
+                onReset={layoutManager.resetLayout}
+                onExitLayoutMode={layoutManager.toggleDragMode}
+              />
+
               {/* How To Use */}
               <DraggableSection
                 id="how-to-use"
                 defaultPosition={layoutManager.sectionLayouts.get('how-to-use')?.position || { x: 0, y: 0 }}
                 isLocked={layoutManager.sectionLayouts.get('how-to-use')?.isLocked || false}
+                isVisible={layoutManager.sectionLayouts.get('how-to-use')?.isVisible !== false}
                 onLockToggle={layoutManager.toggleSectionLock}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-80"
               >
@@ -224,7 +235,9 @@ export default function Home() {
                 id="manual-controls"
                 defaultPosition={layoutManager.sectionLayouts.get('manual-controls')?.position || { x: 0, y: 200 }}
                 isLocked={layoutManager.sectionLayouts.get('manual-controls')?.isLocked || false}
+                isVisible={layoutManager.sectionLayouts.get('manual-controls')?.isVisible !== false}
                 onLockToggle={layoutManager.toggleSectionLock}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-80"
               >
@@ -249,7 +262,9 @@ export default function Home() {
                 id="participant-list"
                 defaultPosition={layoutManager.sectionLayouts.get('participant-list')?.position || { x: 0, y: 400 }}
                 isLocked={layoutManager.sectionLayouts.get('participant-list')?.isLocked || false}
+                isVisible={layoutManager.sectionLayouts.get('participant-list')?.isVisible !== false}
                 onLockToggle={layoutManager.toggleSectionLock}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-80"
               >
@@ -273,9 +288,11 @@ export default function Home() {
                 id="wheel-section"
                 defaultPosition={layoutManager.sectionLayouts.get('wheel-section')?.position || { x: 400, y: 0 }}
                 isLocked={layoutManager.sectionLayouts.get('wheel-section')?.isLocked || false}
+                isVisible={layoutManager.sectionLayouts.get('wheel-section')?.isVisible !== false}
                 onLockToggle={layoutManager.toggleSectionLock}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
                 onPositionChange={layoutManager.updateSectionPosition}
-                className="absolute w-96"
+                className="absolute w-[480px]"
               >
                 <div 
                   className={cn(
@@ -338,7 +355,9 @@ export default function Home() {
                 id="connection-controls"
                 defaultPosition={layoutManager.sectionLayouts.get('connection-controls')?.position || { x: 400, y: 500 }}
                 isLocked={layoutManager.sectionLayouts.get('connection-controls')?.isLocked || false}
+                isVisible={layoutManager.sectionLayouts.get('connection-controls')?.isVisible !== false}
                 onLockToggle={layoutManager.toggleSectionLock}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-96"
               >

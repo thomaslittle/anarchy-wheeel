@@ -27,6 +27,7 @@ export function useConfetti() {
 
     confetti({
       ...finalOptions,
+      zIndex: 40, // Below celebration popup (z-50) but above other content
     });
   }, []);
 
@@ -37,7 +38,7 @@ export function useConfetti() {
       startVelocity: 30, 
       spread: 360, 
       ticks: 60, 
-      zIndex: 0,
+      zIndex: 40, // Below celebration popup (z-50) but above other content
       colors: ['#9146ff', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']
     };
 

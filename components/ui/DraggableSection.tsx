@@ -9,7 +9,9 @@ interface DraggableSectionProps {
   className?: string;
   defaultPosition?: { x: number; y: number };
   isLocked?: boolean;
+  isVisible?: boolean;
   onLockToggle?: (id: string, locked: boolean) => void;
+  onVisibilityToggle?: (id: string, visible: boolean) => void;
   onPositionChange?: (id: string, position: { x: number; y: number }) => void;
 }
 
@@ -19,7 +21,9 @@ export function DraggableSection({
   className = '',
   defaultPosition = { x: 0, y: 0 },
   isLocked = false,
+  isVisible = true,
   onLockToggle,
+  onVisibilityToggle,
   onPositionChange
 }: DraggableSectionProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -27,19 +31,24 @@ export function DraggableSection({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const sectionRef = useRef<HTMLDivElement>(null);
 
+  // Update position when defaultPosition changes (from saved layouts)
+  useEffect(() => {
+    setPosition(defaultPosition);
+  }, [defaultPosition]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (isLocked) return;
     
     e.preventDefault();
-    const rect = sectionRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
+    e.stopPropagation();
+    
     setIsDragging(true);
+    // Store the offset from mouse to current position, not to element bounds
     setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
     });
-  }, [isLocked]);
+  }, [isLocked, position.x, position.y]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || isLocked) return;
@@ -50,12 +59,13 @@ export function DraggableSection({
       y: e.clientY - dragOffset.y
     };
 
-    // Constrain to viewport
-    const maxX = window.innerWidth - (sectionRef.current?.offsetWidth || 0);
-    const maxY = window.innerHeight - (sectionRef.current?.offsetHeight || 0);
+    // Constrain to viewport with some padding
+    const padding = 20;
+    const maxX = window.innerWidth - (sectionRef.current?.offsetWidth || 0) - padding;
+    const maxY = window.innerHeight - (sectionRef.current?.offsetHeight || 0) - padding;
     
-    newPosition.x = Math.max(0, Math.min(maxX, newPosition.x));
-    newPosition.y = Math.max(0, Math.min(maxY, newPosition.y));
+    newPosition.x = Math.max(padding, Math.min(maxX, newPosition.x));
+    newPosition.y = Math.max(padding, Math.min(maxY, newPosition.y));
 
     setPosition(newPosition);
     onPositionChange?.(id, newPosition);
@@ -82,6 +92,14 @@ export function DraggableSection({
     onLockToggle?.(id, !isLocked);
   };
 
+  const handleVisibilityToggle = () => {
+    onVisibilityToggle?.(id, !isVisible);
+  };
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <div
       ref={sectionRef}
@@ -95,11 +113,26 @@ export function DraggableSection({
         transition: isDragging ? 'none' : 'transform 0.2s ease-out'
       }}
     >
-      {/* Drag Handle and Lock Button */}
+      {/* Control Buttons */}
       <div className={cn(
         "absolute -top-2 -right-2 z-10 flex gap-1",
         "opacity-0 group-hover:opacity-100 transition-opacity duration-200"
       )}>
+        {/* Visibility Button */}
+        <button
+          onClick={handleVisibilityToggle}
+          className={cn(
+            "w-6 h-6 rounded-full flex items-center justify-center text-xs",
+            "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
+            "hover:bg-[var(--bg-tertiary)] transition-colors",
+            "focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]",
+            "text-[var(--text-secondary)]"
+          )}
+          title="Hide section"
+        >
+          👁️
+        </button>
+
         {/* Lock/Unlock Button */}
         <button
           onClick={handleLockToggle}

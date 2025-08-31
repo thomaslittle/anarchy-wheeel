@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useLayoutEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface WinnerAnnouncementProps {
@@ -15,90 +15,126 @@ export function WinnerAnnouncement({
   winner, 
   winnerText, 
   onComplete, 
-  duration = 5000,
-  wheelRef
+  duration = 5000
 }: WinnerAnnouncementProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [isPositioned, setIsPositioned] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  // Use layoutEffect to calculate position before paint
-  useLayoutEffect(() => {
-    if (winner && wheelRef?.current) {
-      const updatePosition = () => {
-        const wheelRect = wheelRef.current!.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Calculate center relative to document, not viewport
-        const centerX = wheelRect.left + scrollX + wheelRect.width / 2;
-        const centerY = wheelRect.top + scrollY + wheelRect.height / 2;
-        
-        setPosition({ x: centerX, y: centerY });
-        setIsPositioned(true);
-      };
-
-      updatePosition();
-      
-      // Update position on scroll to keep it centered on wheel
-      const handleScroll = () => updatePosition();
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      window.addEventListener('resize', handleScroll, { passive: true });
-      
-      return () => {
-        window.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('resize', handleScroll);
-      };
-    }
-  }, [winner, wheelRef]);
+  const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
     if (winner) {
-      setIsVisible(true);
+      setShouldRender(true);
+      // Small delay to ensure DOM is ready
+      const showTimer = setTimeout(() => {
+        setIsVisible(true);
+      }, 10);
       
-      const timer = setTimeout(() => {
+      const hideTimer = setTimeout(() => {
         setIsVisible(false);
-        setIsPositioned(false);
-        onComplete?.();
+        // Clean up after fade out animation completes
+        setTimeout(() => {
+          setShouldRender(false);
+          onComplete?.();
+        }, 300);
       }, duration);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+      };
     } else {
       setIsVisible(false);
-      setIsPositioned(false);
+      setShouldRender(false);
     }
   }, [winner, duration, onComplete]);
 
-  // Don't render until we have a winner and position calculated
-  if (!winner || !isVisible || !isPositioned) return null;
+  if (!winner || !shouldRender) return null;
 
   const displayText = winnerText.replace(/{winner}/g, winner);
   const textParts = displayText.split('\n');
 
   return (
     <div 
-      className="fixed top-0 left-0 z-50 pointer-events-none"
+      className={cn(
+        "fixed inset-0 z-50 pointer-events-none",
+        "flex items-center justify-center",
+        "transition-opacity duration-300 ease-in-out",
+        isVisible ? "opacity-100" : "opacity-0"
+      )}
       style={{
-        transform: `translate(-50%, -50%)`,
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        willChange: 'transform'
+        willChange: 'opacity'
       }}
     >
       <div 
         className={cn(
           "bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]",
-          "text-white px-8 py-6 rounded-xl font-bold text-xl text-center",
+          "text-white font-bold text-center",
           "shadow-[0_10px_30px_var(--shadow-color)]",
-          "animate-[winnerPop_0.6s_ease-out]",
-          "whitespace-pre-line"
+          "border-4 border-white/20",
+          "backdrop-blur-sm",
+          "transform transition-all duration-600 ease-out",
+          isVisible 
+            ? "scale-100 translate-y-0" 
+            : "scale-75 translate-y-4",
+          "whitespace-pre-line",
+          // Responsive padding and sizing
+          "px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6",
+          "rounded-lg sm:rounded-xl",
+          "max-w-[90vw] sm:max-w-lg md:max-w-xl lg:max-w-2xl",
+          "mx-4"
         )}
+        style={{
+          textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+          minHeight: textParts.length > 2 ? '120px' : '80px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}
       >
-        {textParts.map((line, index) => (
-          <div key={index} className={index > 0 ? 'mt-2' : ''}>
-            {line}
-          </div>
-        ))}
+        {textParts.map((line, index) => {
+          // Calculate responsive font sizes based on content length and line count
+          const totalLines = textParts.length;
+          const lineLength = line.length;
+          
+          let baseFontSize = 'text-xl'; // Default
+          
+          if (totalLines === 1) {
+            // Single line - scale based on length
+            if (lineLength <= 15) baseFontSize = 'text-2xl md:text-3xl';
+            else if (lineLength <= 25) baseFontSize = 'text-xl md:text-2xl';
+            else if (lineLength <= 40) baseFontSize = 'text-lg md:text-xl';
+            else baseFontSize = 'text-base md:text-lg';
+          } else if (totalLines === 2) {
+            // Two lines - adjust based on which line and length
+            if (index === 0) {
+              // First line - usually title/celebration
+              if (lineLength <= 20) baseFontSize = 'text-xl md:text-2xl';
+              else baseFontSize = 'text-lg md:text-xl';
+            } else {
+              // Second line - usually winner name
+              if (lineLength <= 15) baseFontSize = 'text-lg md:text-xl';
+              else baseFontSize = 'text-base md:text-lg';
+            }
+          } else {
+            // Three or more lines - smaller fonts
+            if (index === 0 && lineLength <= 20) {
+              baseFontSize = 'text-lg md:text-xl';
+            } else {
+              baseFontSize = 'text-base md:text-lg';
+            }
+          }
+          
+          return (
+            <div key={index} className={cn(
+              "leading-tight",
+              index > 0 && (totalLines > 2 ? 'mt-1' : 'mt-2'),
+              baseFontSize,
+              // Add emphasis to first line if it's likely a title
+              index === 0 && totalLines > 1 && 'font-extrabold'
+            )}>
+              {line}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
