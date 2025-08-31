@@ -65,6 +65,7 @@ export function SettingsModal({
   const [localColors, setLocalColors] = useState(settings.colors);
   const [localWinnerText, setLocalWinnerText] = useState(settings.winnerText);
   const [localSpinDuration, setLocalSpinDuration] = useState(settings.spinDuration);
+  const [isColorsExpanded, setIsColorsExpanded] = useState(false);
 
   const handleColorChange = (index: number, color: string) => {
     const newColors = [...localColors];
@@ -101,25 +102,35 @@ export function SettingsModal({
       <div className="space-y-8">
         {/* Wheel Colors */}
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-            Wheel Colors
-          </h3>
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setIsColorsExpanded(!isColorsExpanded)}
+          >
+            <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+              Wheel Colors
+            </h3>
+            <span className="text-2xl text-[var(--text-secondary)]">
+              {isColorsExpanded ? '▼' : '▶'}
+            </span>
+          </div>
           
-          <p className="text-[var(--text-secondary)] mb-5">
+          <p className="text-[var(--text-secondary)]">
             Customize the 10 colors used for wheel segments. Colors cycle if you have more than 10 participants.
           </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {localColors.map((color, index) => (
-              <ColorPicker
-                key={index}
-                color={color}
-                label={`Color ${index + 1}`}
-                index={index}
-                onColorChange={handleColorChange}
-              />
-            ))}
-          </div>
+          
+          {isColorsExpanded && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {localColors.map((color, index) => (
+                <ColorPicker
+                  key={index}
+                  color={color}
+                  label={`Color ${index + 1}`}
+                  index={index}
+                  onColorChange={handleColorChange}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Spin Duration */}

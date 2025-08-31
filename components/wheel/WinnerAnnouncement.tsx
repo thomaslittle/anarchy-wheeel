@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useLayoutEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface WinnerAnnouncementProps {
@@ -19,36 +19,58 @@ export function WinnerAnnouncement({
   wheelRef
 }: WinnerAnnouncementProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isPositioned, setIsPositioned] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  // Use layoutEffect to calculate position before paint
+  useLayoutEffect(() => {
+    if (winner && wheelRef?.current) {
+      const updatePosition = () => {
+        const wheelRect = wheelRef.current!.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Calculate center relative to document, not viewport
+        const centerX = wheelRect.left + scrollX + wheelRect.width / 2;
+        const centerY = wheelRect.top + scrollY + wheelRect.height / 2;
+        
+        setPosition({ x: centerX, y: centerY });
+        setIsPositioned(true);
+      };
+
+      updatePosition();
+      
+      // Update position on scroll to keep it centered on wheel
+      const handleScroll = () => updatePosition();
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleScroll, { passive: true });
+      
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('resize', handleScroll);
+      };
+    }
+  }, [winner, wheelRef]);
 
   useEffect(() => {
     if (winner) {
-      // Calculate position based on wheel center
-      if (wheelRef?.current) {
-        const wheelRect = wheelRef.current.getBoundingClientRect();
-        const centerX = wheelRect.left + wheelRect.width / 2;
-        const centerY = wheelRect.top + wheelRect.height / 2;
-        setPosition({ x: centerX, y: centerY });
-      } else {
-        // Fallback to viewport center
-        setPosition({ 
-          x: window.innerWidth / 2, 
-          y: window.innerHeight / 2 
-        });
-      }
-      
       setIsVisible(true);
       
       const timer = setTimeout(() => {
         setIsVisible(false);
+        setIsPositioned(false);
         onComplete?.();
       }, duration);
 
       return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
+      setIsPositioned(false);
     }
-  }, [winner, duration, onComplete, wheelRef]);
+  }, [winner, duration, onComplete]);
 
-  if (!winner || !isVisible) return null;
+  // Don't render until we have a winner and position calculated
+  if (!winner || !isVisible || !isPositioned) return null;
 
   const displayText = winnerText.replace(/{winner}/g, winner);
   const textParts = displayText.split('\n');
@@ -59,7 +81,8 @@ export function WinnerAnnouncement({
       style={{
         transform: `translate(-50%, -50%)`,
         left: `${position.x}px`,
-        top: `${position.y}px`
+        top: `${position.y}px`,
+        willChange: 'transform'
       }}
     >
       <div 

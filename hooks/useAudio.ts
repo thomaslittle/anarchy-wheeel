@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { AudioSettings } from '@/types';
 
 interface UseAudioReturn {
   soundsEnabled: boolean;
   toggleSound: () => void;
   playTickSound: () => void;
   playCongratsSound: () => void;
+  playToggleOnSound: () => void;
+  playToggleOffSound: () => void;
 }
 
 export function useAudio(): UseAudioReturn {
@@ -21,8 +22,9 @@ export function useAudio(): UseAudioReturn {
       setSoundsEnabled(saved === 'true');
     }
 
-    if (typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
-      audioContextRef.current = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
+    if (typeof AudioContext !== 'undefined' || typeof (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext !== 'undefined') {
+      const AudioContextClass = AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioContextRef.current = new AudioContextClass();
     }
 
     return () => {
@@ -32,15 +34,74 @@ export function useAudio(): UseAudioReturn {
     };
   }, []);
 
+  const playToggleOnSound = useCallback(() => {
+    if (!audioContextRef.current) return;
+
+    try {
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      const oscillator = audioContextRef.current.createOscillator();
+      const gainNode = audioContextRef.current.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContextRef.current.destination);
+
+      // Higher pitch for "on" sound
+      oscillator.frequency.setValueAtTime(800, audioContextRef.current.currentTime);
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.1, audioContextRef.current.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContextRef.current.currentTime + 0.15);
+
+      oscillator.start(audioContextRef.current.currentTime);
+      oscillator.stop(audioContextRef.current.currentTime + 0.15);
+    } catch (error) {
+      console.log('Toggle on sound failed:', error);
+    }
+  }, []);
+
+  const playToggleOffSound = useCallback(() => {
+    if (!audioContextRef.current) return;
+
+    try {
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      const oscillator = audioContextRef.current.createOscillator();
+      const gainNode = audioContextRef.current.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContextRef.current.destination);
+
+      // Lower pitch for "off" sound
+      oscillator.frequency.setValueAtTime(400, audioContextRef.current.currentTime);
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.1, audioContextRef.current.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContextRef.current.currentTime + 0.2);
+
+      oscillator.start(audioContextRef.current.currentTime);
+      oscillator.stop(audioContextRef.current.currentTime + 0.2);
+    } catch (error) {
+      console.log('Toggle off sound failed:', error);
+    }
+  }, []);
+
   const toggleSound = useCallback(() => {
     const newState = !soundsEnabled;
     setSoundsEnabled(newState);
     localStorage.setItem('soundsEnabled', newState.toString());
     
-    if (newState && audioContextRef.current) {
-      playTickSound();
+    // Always play toggle sound regardless of current state to provide feedback
+    if (newState) {
+      playToggleOnSound();
+    } else {
+      playToggleOffSound();
     }
-  }, [soundsEnabled]);
+  }, [soundsEnabled, playToggleOnSound, playToggleOffSound]);
 
   const playTickSound = useCallback(() => {
     if (!soundsEnabled || !audioContextRef.current) return;
@@ -49,7 +110,7 @@ export function useAudio(): UseAudioReturn {
       if (currentTickOscillatorRef.current) {
         try {
           currentTickOscillatorRef.current.stop();
-        } catch (e) {
+        } catch {
           // Ignore if already stopped
         }
       }
@@ -139,5 +200,7 @@ export function useAudio(): UseAudioReturn {
     toggleSound,
     playTickSound,
     playCongratsSound,
+    playToggleOnSound,
+    playToggleOffSound,
   };
 }

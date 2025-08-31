@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import type { Participant, SpinAnimation, WheelSettings } from '@/types';
+import type { Participant, WheelSettings } from '@/types';
 
 const DEFAULT_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
@@ -21,7 +21,7 @@ interface UseWheelReturn {
   removeParticipant: (username: string) => boolean;
   removeWinner: () => boolean;
   clearAll: () => void;
-  spinWheel: (onWinnerSelected: (winner: string) => void) => void;
+  spinWheel: (onWinnerSelected: (winner: string) => void, onTick?: () => void) => void;
   updateSettings: (newSettings: Partial<WheelSettings>) => void;
   resetColors: () => void;
   updateParticipantWeight: (username: string, weight: number) => boolean;
@@ -93,7 +93,7 @@ export function useWheel(): UseWheelReturn {
     setIsSpinning(false);
   }, []);
 
-  const spinWheel = useCallback((onWinnerSelected: (winner: string) => void) => {
+  const spinWheel = useCallback((onWinnerSelected: (winner: string) => void, onTick?: () => void) => {
     if (participants.length === 0 || isSpinning) return;
 
     setIsSpinning(true);
@@ -102,6 +102,10 @@ export function useWheel(): UseWheelReturn {
     const spinAmount = Math.random() * 4 + 12;
     const startRotation = currentRotation;
     const startTime = Date.now();
+    
+    // For tick sound calculation
+    let lastTickSegment = -1;
+    const totalWeight = participants.reduce((sum, p) => sum + p.weight, 0);
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
@@ -112,12 +116,37 @@ export function useWheel(): UseWheelReturn {
       
       setCurrentRotation(newRotation);
       
+      // Calculate tick sounds during spinning
+      if (onTick && progress < 0.95) { // Stop ticking near the end for smoother finish
+        const normalizedRotation = ((newRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+        const pointerAngle = (2 * Math.PI - normalizedRotation) % (2 * Math.PI);
+        
+        let currentAngle = 0;
+        let currentSegment = -1;
+        
+        for (let i = 0; i < participants.length; i++) {
+          const segmentAngle = (participants[i].weight / totalWeight) * (2 * Math.PI);
+          const segmentEnd = currentAngle + segmentAngle;
+          
+          if (pointerAngle >= currentAngle && pointerAngle < segmentEnd) {
+            currentSegment = i;
+            break;
+          }
+          
+          currentAngle += segmentAngle;
+        }
+        
+        if (currentSegment !== lastTickSegment && currentSegment !== -1) {
+          onTick();
+          lastTickSegment = currentSegment;
+        }
+      }
+      
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        // Calculate winner based on which segment is under the pointer
+        // Calculate winner based on which weighted segment is under the pointer
         // The pointer is at the 3 o'clock position (0 radians from the right)
-        const anglePerSegment = (2 * Math.PI) / participants.length;
         
         // Normalize rotation to 0-2π range
         const normalizedRotation = ((newRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
@@ -126,7 +155,23 @@ export function useWheel(): UseWheelReturn {
         // Since the wheel rotates clockwise and segments are drawn starting from 0 radians,
         // we need to reverse the rotation to find which segment aligns with the pointer
         const pointerAngle = (2 * Math.PI - normalizedRotation) % (2 * Math.PI);
-        const winnerIndex = Math.floor(pointerAngle / anglePerSegment) % participants.length;
+        
+        // Calculate weighted segments to find which one contains the pointer angle
+        const totalWeight = participants.reduce((sum, p) => sum + p.weight, 0);
+        let currentAngle = 0;
+        let winnerIndex = 0;
+        
+        for (let i = 0; i < participants.length; i++) {
+          const segmentAngle = (participants[i].weight / totalWeight) * (2 * Math.PI);
+          const segmentEnd = currentAngle + segmentAngle;
+          
+          if (pointerAngle >= currentAngle && pointerAngle < segmentEnd) {
+            winnerIndex = i;
+            break;
+          }
+          
+          currentAngle += segmentAngle;
+        }
         
         const winner = participants[winnerIndex].username;
         

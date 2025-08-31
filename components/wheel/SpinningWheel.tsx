@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import type { Participant, WheelSettings } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +23,31 @@ export function SpinningWheel({
 }: SpinningWheelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Calculate weighted segments
+  const calculateSegments = useCallback(() => {
+    if (participants.length === 0) return [];
+    
+    const totalWeight = participants.reduce((sum, p) => sum + p.weight, 0);
+    let currentAngle = 0;
+    
+    return participants.map((participant, index) => {
+      const segmentAngle = (participant.weight / totalWeight) * (2 * Math.PI);
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + segmentAngle;
+      
+      currentAngle += segmentAngle;
+      
+      return {
+        participant,
+        startAngle,
+        endAngle,
+        segmentAngle,
+        index
+      };
+    });
+  }, [participants]);
 
   const drawWheel = useCallback(() => {
     const canvas = canvasRef.current;
@@ -55,24 +80,24 @@ export function SpinningWheel({
       return;
     }
 
-    const anglePerSegment = (2 * Math.PI) / participants.length;
+    const segments = calculateSegments();
 
-    // Draw wheel segments
-    for (let i = 0; i < participants.length; i++) {
-      const startAngle = i * anglePerSegment + currentRotation;
-      const endAngle = (i + 1) * anglePerSegment + currentRotation;
+    // Draw wheel segments with weighted sizes
+    segments.forEach(({ participant, startAngle, endAngle, segmentAngle, index }) => {
+      const rotatedStartAngle = startAngle + currentRotation;
+      const rotatedEndAngle = endAngle + currentRotation;
 
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.arc(centerX, centerY, radius, rotatedStartAngle, rotatedEndAngle);
       ctx.lineTo(centerX, centerY);
-      ctx.fillStyle = settings.colors[i % settings.colors.length];
+      ctx.fillStyle = settings.colors[index % settings.colors.length];
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Draw text
-      const textAngle = startAngle + anglePerSegment / 2;
+      // Draw text - adjust font size based on segment size
+      const textAngle = rotatedStartAngle + segmentAngle / 2;
       const textRadius = radius * 0.7;
       const textX = centerX + Math.cos(textAngle) * textRadius;
       const textY = centerY + Math.sin(textAngle) * textRadius;
@@ -86,22 +111,29 @@ export function SpinningWheel({
       }
       ctx.rotate(rotation);
 
-      const text = participants[i].username;
+      const text = participant.username;
+      
+      // Adjust font size based on segment size (minimum 10px, maximum 16px)
+      const baseFontSize = Math.max(10, Math.min(16, (segmentAngle / (Math.PI / 6)) * 14));
+      ctx.font = `bold ${baseFontSize}px Segoe UI`;
+      
       const textWidth = ctx.measureText(text).width;
       
-      // Text background
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(-textWidth/2 - 4, -10, textWidth + 8, 20);
+      // Only draw text background and text if segment is large enough
+      if (segmentAngle > 0.1) { // Minimum angle threshold for text visibility
+        // Text background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(-textWidth/2 - 4, -baseFontSize/2 - 2, textWidth + 8, baseFontSize + 4);
 
-      // Text
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px Segoe UI';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, 0, 0);
+        // Text
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 0, 0);
+      }
 
       ctx.restore();
-    }
+    });
 
     // Draw center circle
     ctx.beginPath();
@@ -122,7 +154,19 @@ export function SpinningWheel({
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.stroke();
-  }, [participants, currentRotation, settings]);
+  }, [participants, currentRotation, settings, calculateSegments]);
+
+  // Handle smooth transitions when participant weights change
+  useEffect(() => {
+    if (!isSpinning) {
+      setIsTransitioning(true);
+      const transitionTimer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300); // Match the CSS transition duration
+      
+      return () => clearTimeout(transitionTimer);
+    }
+  }, [participants.map(p => p.weight).join(','), isSpinning]);
 
   useEffect(() => {
     drawWheel();
@@ -134,6 +178,7 @@ export function SpinningWheel({
       className={cn(
         "flex flex-col items-center relative",
         "z-10", // Ensure wheel stays below modals but above background
+        isTransitioning && "transition-all duration-300 ease-in-out",
         className
       )}
     >
@@ -146,6 +191,7 @@ export function SpinningWheel({
           "shadow-[0_0_30px_rgba(145,70,255,0.3)]",
           "md:w-[400px] md:h-[400px] w-[300px] h-[300px]",
           "max-w-[90vw] max-h-[90vw]", // Prevent overflow on small screens
+          "transition-all duration-300 ease-in-out", // Smooth transitions for visual changes
           isSpinning && "animate-pulse"
         )}
         style={{
