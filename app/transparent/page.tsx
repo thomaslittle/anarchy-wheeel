@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useWheel } from '@/hooks/useWheel';
 import { useTwitch } from '@/hooks/useTwitch';
 import { useAudio } from '@/hooks/useAudio';
@@ -150,12 +151,12 @@ export default function TransparentMode() {
           <p className="text-white/80 mb-6">
             Please connect your Twitch account from the main page first
           </p>
-          <a 
+          <Link 
             href="/" 
             className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Go to Main Page
-          </a>
+          </Link>
         </div>
       </div>
     );

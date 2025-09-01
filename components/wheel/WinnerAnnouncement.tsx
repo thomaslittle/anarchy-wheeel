@@ -15,7 +15,6 @@ export function WinnerAnnouncement({
   winner,
   winnerText,
   onComplete,
-  duration = 5000,
   wheelRef
 }: WinnerAnnouncementProps) {
   const [isVisible, setIsVisible] = useState(false);
