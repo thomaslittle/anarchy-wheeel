@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import type { WheelSettings } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -65,7 +66,9 @@ export function SettingsModal({
   const [localColors, setLocalColors] = useState(settings.colors);
   const [localWinnerText, setLocalWinnerText] = useState(settings.winnerText);
   const [localSpinDuration, setLocalSpinDuration] = useState(settings.spinDuration);
-  const [isColorsExpanded, setIsColorsExpanded] = useState(false);
+  const [localWheelImage, setLocalWheelImage] = useState(settings.wheelImage || '');
+  const [localWheelMode, setLocalWheelMode] = useState(settings.wheelMode || 'colors');
+  const [isWheelCustomizationExpanded, setIsWheelCustomizationExpanded] = useState(false);
   const [isSpinDurationExpanded, setIsSpinDurationExpanded] = useState(false);
   const [isWinnerTextExpanded, setIsWinnerTextExpanded] = useState(false);
   const [isWeightsExpanded, setIsWeightsExpanded] = useState(false);
@@ -76,11 +79,30 @@ export function SettingsModal({
     setLocalColors(newColors);
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setLocalWheelImage(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setLocalWheelImage('');
+    setLocalWheelMode('colors');
+  };
+
   const handleSave = () => {
     onUpdateSettings({
       colors: localColors,
       winnerText: localWinnerText,
-      spinDuration: localSpinDuration
+      spinDuration: localSpinDuration,
+      wheelImage: localWheelImage,
+      wheelMode: localWheelMode
     });
     onClose();
   };
@@ -94,6 +116,8 @@ export function SettingsModal({
   const handleReset = () => {
     onResetColors();
     setLocalColors(settings.colors);
+    setLocalWheelImage('');
+    setLocalWheelMode('colors');
   };
 
   return (
@@ -103,35 +127,129 @@ export function SettingsModal({
       title="⚙️ Wheel Settings"
     >
       <div className="space-y-8">
-        {/* Wheel Colors */}
+        {/* Wheel Customization */}
         <div className="space-y-4">
           <div 
             className="flex items-center justify-between cursor-pointer"
-            onClick={() => setIsColorsExpanded(!isColorsExpanded)}
+            onClick={() => setIsWheelCustomizationExpanded(!isWheelCustomizationExpanded)}
           >
             <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-              Wheel Colors
+              Wheel Customization
             </h3>
             <span className="text-2xl text-[var(--text-secondary)]">
-              {isColorsExpanded ? '▼' : '▶'}
+              {isWheelCustomizationExpanded ? '▼' : '▶'}
             </span>
           </div>
           
           <p className="text-[var(--text-secondary)]">
-            Customize the 10 colors used for wheel segments. Colors cycle if you have more than 10 participants.
+            Customize the wheel appearance with colors or upload your own image.
           </p>
           
-          {isColorsExpanded && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {localColors.map((color, index) => (
-                <ColorPicker
-                  key={index}
-                  color={color}
-                  label={`Color ${index + 1}`}
-                  index={index}
-                  onColorChange={handleColorChange}
-                />
-              ))}
+          {isWheelCustomizationExpanded && (
+            <div className="space-y-6">
+              {/* Mode Toggle */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-[var(--text-primary)]">
+                  Wheel Mode
+                </h4>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="wheelMode"
+                      value="colors"
+                      checked={localWheelMode === 'colors'}
+                      onChange={(e) => setLocalWheelMode(e.target.value as 'colors' | 'image')}
+                      className="text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
+                    />
+                    <span className="text-sm text-[var(--text-primary)]">Color Segments</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="wheelMode"
+                      value="image"
+                      checked={localWheelMode === 'image'}
+                      onChange={(e) => setLocalWheelMode(e.target.value as 'colors' | 'image')}
+                      className="text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
+                      disabled={!localWheelImage}
+                    />
+                    <span className={cn(
+                      "text-sm",
+                      localWheelImage ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
+                    )}>
+                      Image Background
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-[var(--text-primary)]">
+                  Wheel Image
+                </h4>
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className={cn(
+                      "block w-full text-sm text-[var(--text-primary)]",
+                      "file:mr-4 file:py-2 file:px-4",
+                      "file:rounded-lg file:border-0",
+                      "file:text-sm file:font-medium",
+                      "file:bg-[var(--accent-primary)] file:text-white",
+                      "hover:file:bg-[var(--accent-secondary)]",
+                      "file:cursor-pointer cursor-pointer"
+                    )}
+                  />
+                  {localWheelImage && (
+                    <div className="flex items-center gap-3">
+                      <Image 
+                        src={localWheelImage} 
+                        alt="Wheel preview" 
+                        width={64}
+                        height={64}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border-color)]"
+                      />
+                      <button
+                        onClick={handleRemoveImage}
+                        className={cn(
+                          "px-3 py-1 text-sm rounded-md",
+                          "bg-red-500 text-white hover:bg-red-600",
+                          "transition-colors"
+                        )}
+                      >
+                        Remove Image
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Color Segments (only show when in colors mode) */}
+              {localWheelMode === 'colors' && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-[var(--text-primary)]">
+                    Segment Colors
+                  </h4>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Customize the 10 colors used for wheel segments. Colors cycle if you have more than 10 participants.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {localColors.map((color, index) => (
+                      <ColorPicker
+                        key={index}
+                        color={color}
+                        label={`Color ${index + 1}`}
+                        index={index}
+                        onColorChange={handleColorChange}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -303,7 +421,7 @@ export function SettingsModal({
             variant="secondary"
             onClick={handleReset}
           >
-            Reset Colors
+            Reset Wheel
           </Button>
           
           <Button

@@ -48,6 +48,7 @@ export default function Home() {
       setShowWinner(winner);
       playCongratsSound();
       celebrationConfetti();
+      setTimeout(() => setShowWinner(null), 5000);
     }, playTickSound);
   }, [wheel, playCongratsSound, celebrationConfetti, playTickSound]);
 
@@ -134,6 +135,12 @@ export default function Home() {
     setPreviewWinnerText(winnerText);
     setShowWinner('TestUser');
     setIsSettingsOpen(false);
+    
+    setTimeout(() => {
+      setShowWinner(null);
+      setPreviewWinnerText(null);
+      setIsSettingsOpen(true);
+    }, 3000);
   };
 
   if (!twitch.user) {
@@ -141,7 +148,7 @@ export default function Home() {
       <>
         <ThemeToggle />
         <SoundToggle />
-
+        
         <div className="min-h-screen p-5">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent">
@@ -154,8 +161,8 @@ export default function Home() {
 
           <TwitchLogin onLogin={twitch.login} />
         </div>
-
-        <Notifications
+        
+        <Notifications 
           notifications={notifications.notifications}
           onRemove={notifications.removeNotification}
         />
@@ -168,7 +175,7 @@ export default function Home() {
       <ThemeToggle />
       <SoundToggle />
       <SettingsToggle onClick={() => setIsSettingsOpen(true)} />
-      <LayoutToggle
+      <LayoutToggle 
         isDragMode={layoutManager.isDragMode}
         onToggle={layoutManager.toggleDragMode}
       />
@@ -211,7 +218,7 @@ export default function Home() {
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-80"
               >
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -233,7 +240,7 @@ export default function Home() {
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-80"
               >
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -260,7 +267,7 @@ export default function Home() {
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-80"
               >
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -286,11 +293,9 @@ export default function Home() {
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-[480px]"
               >
-                <div
+                <div 
                   className={cn(
                     "flex flex-col items-center p-8 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
                   )}
                 >
                   <SpinningWheel
@@ -320,7 +325,7 @@ export default function Home() {
                       🎲 SPIN THE WHEEL!
                     </button>
 
-                    <div
+                    <div 
                       className={cn(
                         "p-4 rounded-lg font-medium text-center",
                         "bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
@@ -353,7 +358,7 @@ export default function Home() {
                 onPositionChange={layoutManager.updateSectionPosition}
                 className="absolute w-96"
               >
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -379,7 +384,7 @@ export default function Home() {
               {/* Left Sidebar Sections */}
               <div className="w-full xl:w-80 space-y-6">
                 {/* How To Use */}
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -390,7 +395,7 @@ export default function Home() {
                 </div>
 
                 {/* Manual Controls */}
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -406,7 +411,7 @@ export default function Home() {
                 </div>
 
                 {/* Participant List */}
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -424,11 +429,9 @@ export default function Home() {
               {/* Right Side - Wheel and Controls */}
               <div className="flex-1 space-y-8">
                 {/* Wheel Section */}
-                <div
+                <div 
                   className={cn(
                     "flex flex-col items-center p-8 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
                   )}
                 >
                   <SpinningWheel
@@ -458,7 +461,7 @@ export default function Home() {
                       🎲 SPIN THE WHEEL!
                     </button>
 
-                    <div
+                    <div 
                       className={cn(
                         "p-4 rounded-lg font-medium text-center",
                         "bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
@@ -480,7 +483,7 @@ export default function Home() {
                 </div>
 
                 {/* User Info and Connection Controls */}
-                <div
+                <div 
                   className={cn(
                     "p-6 rounded-2xl",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -523,7 +526,7 @@ export default function Home() {
         onUpdateWeight={wheel.updateParticipantWeight}
       />
 
-      <Notifications
+      <Notifications 
         notifications={notifications.notifications}
         onRemove={notifications.removeNotification}
       />

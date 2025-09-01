@@ -49,6 +49,88 @@ export function SpinningWheel({
     });
   }, [participants]);
 
+  const drawParticipantNames = useCallback((
+    ctx: CanvasRenderingContext2D, 
+    segments: { participant: Participant; startAngle: number; endAngle: number; segmentAngle: number; index: number }[], 
+    centerX: number, 
+    centerY: number, 
+    radius: number,
+    isImageMode: boolean
+  ) => {
+    segments.forEach(({ participant, startAngle, segmentAngle }) => {
+      // In both modes, we need to add the current rotation to get the actual position
+      const rotatedStartAngle = startAngle + currentRotation;
+      
+      // Draw text - adjust font size based on segment size
+      const textAngle = rotatedStartAngle + segmentAngle / 2;
+      const textRadius = radius * 0.7;
+      const textX = centerX + Math.cos(textAngle) * textRadius;
+      const textY = centerY + Math.sin(textAngle) * textRadius;
+
+      ctx.save();
+      ctx.translate(textX, textY);
+
+      let rotation = textAngle;
+      if (textAngle > Math.PI / 2 && textAngle < 3 * Math.PI / 2) {
+        rotation += Math.PI;
+      }
+      ctx.rotate(rotation);
+
+      const text = participant.username;
+      
+      // Adjust font size based on segment size (minimum 10px, maximum 16px)
+      const baseFontSize = Math.max(10, Math.min(16, (segmentAngle / (Math.PI / 6)) * 14));
+      ctx.font = `bold ${baseFontSize}px Segoe UI`;
+      
+      const textWidth = ctx.measureText(text).width;
+      
+      // Only draw text background and text if segment is large enough
+      if (segmentAngle > 0.1) { // Minimum angle threshold for text visibility
+        // Text background - make more prominent for image mode
+        ctx.fillStyle = isImageMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(-textWidth/2 - 4, -baseFontSize/2 - 2, textWidth + 8, baseFontSize + 4);
+
+        // Text
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 0, 0);
+      }
+
+      ctx.restore();
+    });
+  }, [currentRotation]);
+
+  const drawCenterAndPointer = useCallback((
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    isImageMode = false
+  ) => {
+    // Only draw center circle if not in image mode
+    if (!isImageMode) {
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 25, 0, 2 * Math.PI);
+      ctx.fillStyle = '#9146ff';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Always draw pointer
+    ctx.beginPath();
+    ctx.moveTo(centerX + radius - 18, centerY);
+    ctx.lineTo(centerX + radius + 15, centerY - 12);
+    ctx.lineTo(centerX + radius + 15, centerY + 12);
+    ctx.fillStyle = '#9146ff';
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }, []);
+
   const drawWheel = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -82,79 +164,59 @@ export function SpinningWheel({
 
     const segments = calculateSegments();
 
-    // Draw wheel segments with weighted sizes
-    segments.forEach(({ participant, startAngle, endAngle, segmentAngle, index }) => {
-      const rotatedStartAngle = startAngle + currentRotation;
-      const rotatedEndAngle = endAngle + currentRotation;
+    // Check if we should draw image mode or color segments
+    if (settings.wheelMode === 'image' && settings.wheelImage) {
+      // Draw image background
+      const img = new Image();
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.clip();
+        
+        // Apply rotation to the entire context for image mode
+        ctx.translate(centerX, centerY);
+        ctx.rotate(currentRotation);
+        ctx.translate(-centerX, -centerY);
+        
+        // Calculate dimensions to fill the circle
+        const size = radius * 2;
+        const imgX = centerX - radius;
+        const imgY = centerY - radius;
+        
+        ctx.drawImage(img, imgX, imgY, size, size);
+        ctx.restore();
+        
+        // Draw participant names over the image
+        drawParticipantNames(ctx, segments, centerX, centerY, radius, true);
+        
+        // Draw center circle and pointer (hide center circle in image mode)
+        drawCenterAndPointer(ctx, centerX, centerY, radius, true);
+      };
+      img.src = settings.wheelImage;
+    } else {
+      // Draw traditional color segments
+      segments.forEach(({ startAngle, endAngle, index }) => {
+        const rotatedStartAngle = startAngle + currentRotation;
+        const rotatedEndAngle = endAngle + currentRotation;
 
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, rotatedStartAngle, rotatedEndAngle);
-      ctx.lineTo(centerX, centerY);
-      ctx.fillStyle = settings.colors[index % settings.colors.length];
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Draw text - adjust font size based on segment size
-      const textAngle = rotatedStartAngle + segmentAngle / 2;
-      const textRadius = radius * 0.7;
-      const textX = centerX + Math.cos(textAngle) * textRadius;
-      const textY = centerY + Math.sin(textAngle) * textRadius;
-
-      ctx.save();
-      ctx.translate(textX, textY);
-
-      let rotation = textAngle;
-      if (textAngle > Math.PI / 2 && textAngle < 3 * Math.PI / 2) {
-        rotation += Math.PI;
-      }
-      ctx.rotate(rotation);
-
-      const text = participant.username;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, rotatedStartAngle, rotatedEndAngle);
+        ctx.lineTo(centerX, centerY);
+        ctx.fillStyle = settings.colors[index % settings.colors.length];
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
       
-      // Adjust font size based on segment size (minimum 10px, maximum 16px)
-      const baseFontSize = Math.max(10, Math.min(16, (segmentAngle / (Math.PI / 6)) * 14));
-      ctx.font = `bold ${baseFontSize}px Segoe UI`;
+      // Draw participant names
+      drawParticipantNames(ctx, segments, centerX, centerY, radius, false);
       
-      const textWidth = ctx.measureText(text).width;
-      
-      // Only draw text background and text if segment is large enough
-      if (segmentAngle > 0.1) { // Minimum angle threshold for text visibility
-        // Text background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(-textWidth/2 - 4, -baseFontSize/2 - 2, textWidth + 8, baseFontSize + 4);
-
-        // Text
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, 0, 0);
-      }
-
-      ctx.restore();
-    });
-
-    // Draw center circle
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 25, 0, 2 * Math.PI);
-    ctx.fillStyle = '#9146ff';
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Draw pointer
-    ctx.beginPath();
-    ctx.moveTo(centerX + radius - 18, centerY);
-    ctx.lineTo(centerX + radius + 15, centerY - 12);
-    ctx.lineTo(centerX + radius + 15, centerY + 12);
-    ctx.fillStyle = '#9146ff';
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }, [participants, currentRotation, settings, calculateSegments]);
+      // Draw center circle and pointer (show center circle in color mode)
+      drawCenterAndPointer(ctx, centerX, centerY, radius, false);
+    }
+  }, [participants, currentRotation, settings, calculateSegments, drawParticipantNames, drawCenterAndPointer]);
 
   // Handle smooth transitions when participant weights change
   useEffect(() => {
@@ -166,7 +228,7 @@ export function SpinningWheel({
       
       return () => clearTimeout(transitionTimer);
     }
-  }, [participants.map(p => p.weight).join(','), isSpinning]);
+  }, [participants, isSpinning]);
 
   useEffect(() => {
     drawWheel();
@@ -191,11 +253,9 @@ export function SpinningWheel({
           "shadow-[0_0_30px_rgba(145,70,255,0.3)]",
           "md:w-[400px] md:h-[400px] w-[300px] h-[300px]",
           "max-w-[90vw] max-h-[90vw]", // Prevent overflow on small screens
-          "transition-all duration-300 ease-in-out", // Smooth transitions for visual changes
-          isSpinning && "animate-pulse"
+          "transition-all duration-300 ease-in-out" // Smooth transitions for visual changes
         )}
         style={{
-          filter: isSpinning ? 'brightness(1.1)' : 'none',
           position: 'relative',
           zIndex: 1,
         }}

@@ -10,6 +10,8 @@ export interface WheelSettings {
   colors: string[];
   winnerText: string;
   spinDuration: number;
+  wheelImage?: string;
+  wheelMode: 'colors' | 'image';
 }
 
 export interface Participant {

@@ -36,6 +36,8 @@ export function useWheel(): UseWheelReturn {
     colors: [...DEFAULT_COLORS],
     winnerText: DEFAULT_WINNER_TEXT,
     spinDuration: DEFAULT_SPIN_DURATION,
+    wheelImage: undefined,
+    wheelMode: 'colors',
   });
 
   const animationRef = useRef<number | undefined>(undefined);
@@ -189,7 +191,12 @@ export function useWheel(): UseWheelReturn {
   }, []);
 
   const resetColors = useCallback(() => {
-    setSettings(prev => ({ ...prev, colors: [...DEFAULT_COLORS] }));
+    setSettings(prev => ({ 
+      ...prev, 
+      colors: [...DEFAULT_COLORS],
+      wheelImage: undefined,
+      wheelMode: 'colors'
+    }));
   }, []);
 
   const updateParticipantWeight = useCallback((username: string, weight: number): boolean => {
