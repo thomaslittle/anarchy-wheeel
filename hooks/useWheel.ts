@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Participant, WheelSettings } from '@/types';
 
 const DEFAULT_COLORS = [
@@ -42,6 +42,84 @@ export function useWheel(): UseWheelReturn {
 
   const animationRef = useRef<number | undefined>(undefined);
   const participantCooldown = useRef(new Map<string, number>());
+
+  // Load persisted data on mount
+  useEffect(() => {
+    try {
+      // Load participants
+      const savedParticipants = localStorage.getItem('wheel-participants');
+      if (savedParticipants) {
+        const parsed = JSON.parse(savedParticipants);
+        if (Array.isArray(parsed)) {
+          setParticipants(parsed);
+        }
+      }
+
+      // Load settings
+      const savedSettings = localStorage.getItem('wheel-settings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        setSettings(prev => ({ ...prev, ...parsed }));
+      }
+
+      // Load last winner
+      const savedWinner = localStorage.getItem('wheel-last-winner');
+      if (savedWinner) {
+        setLastWinner(savedWinner);
+      }
+
+      // Load rotation
+      const savedRotation = localStorage.getItem('wheel-rotation');
+      if (savedRotation) {
+        const rotation = parseFloat(savedRotation);
+        if (!isNaN(rotation)) {
+          setCurrentRotation(rotation);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load wheel data from localStorage:', error);
+    }
+  }, []);
+
+  // Persist participants whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('wheel-participants', JSON.stringify(participants));
+    } catch (error) {
+      console.error('Failed to save participants to localStorage:', error);
+    }
+  }, [participants]);
+
+  // Persist settings whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('wheel-settings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Failed to save settings to localStorage:', error);
+    }
+  }, [settings]);
+
+  // Persist last winner
+  useEffect(() => {
+    try {
+      if (lastWinner) {
+        localStorage.setItem('wheel-last-winner', lastWinner);
+      } else {
+        localStorage.removeItem('wheel-last-winner');
+      }
+    } catch (error) {
+      console.error('Failed to save last winner to localStorage:', error);
+    }
+  }, [lastWinner]);
+
+  // Persist rotation
+  useEffect(() => {
+    try {
+      localStorage.setItem('wheel-rotation', currentRotation.toString());
+    } catch (error) {
+      console.error('Failed to save rotation to localStorage:', error);
+    }
+  }, [currentRotation]);
 
   const addParticipant = useCallback((username: string): boolean => {
     if (!username || typeof username !== 'string') return false;

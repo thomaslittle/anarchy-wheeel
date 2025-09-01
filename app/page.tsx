@@ -182,6 +182,21 @@ export default function Home() {
           <p className="text-lg text-[var(--text-secondary)]">
             Professional giveaway tool for Twitch streamers
           </p>
+          {twitch.user && (
+            <div className="mt-4">
+              <a 
+                href="/transparent" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                📺 Open OBS Mode
+              </a>
+              <p className="text-sm text-[var(--text-secondary)] mt-2">
+                Use this link as Browser Source in OBS: <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">http://localhost:3000/transparent</code>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}

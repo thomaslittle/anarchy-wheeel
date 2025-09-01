@@ -51,6 +51,13 @@ body {
   transition: all 0.3s ease;
 }
 
+/* Override body background for OBS transparent mode */
+body.obs-transparent {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
 /* Animation keyframes */
 @keyframes winnerPop {
   0% { transform: translate(-50%, -50%) scale(0); }
@@ -61,4 +68,98 @@ body {
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
+}
+
+/* OBS Transparent Mode Styles */
+.obs-transparent {
+  background: transparent !important;
+}
+
+.obs-transparent body {
+  background: transparent !important;
+  /* Override theme background variables */
+  --bg-primary: transparent !important;
+}
+
+.obs-transparent html {
+  background: transparent !important;
+}
+
+/* Ensure transparent backgrounds work in OBS */
+.obs-transparent * {
+  box-sizing: border-box;
+}
+
+/* Force transparent background over theme styles */
+.obs-transparent,
+.obs-transparent html,
+.obs-transparent body {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+/* Better visibility for transparent overlays */
+.obs-transparent .bg-black\/40 {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+}
+
+.obs-transparent .bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* OBS-specific enhancements */
+.obs-transparent .border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.obs-transparent .text-white {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.obs-transparent .text-yellow-400 {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.obs-transparent .text-green-400 {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.obs-transparent .text-blue-400 {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.obs-transparent .text-gray-300 {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Ensure buttons are fully visible in OBS */
+.obs-transparent button {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Improve visibility of the wheel in OBS */
+.obs-transparent canvas,
+.obs-transparent svg {
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Winner announcement should be very visible */
+.obs-transparent [class*="winner"] {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+/* Notifications positioning for OBS */
+.obs-transparent .fixed.bottom-4.right-4 {
+  z-index: 100;
+}
+
+/* Disable hover effects that might not work well in OBS */
+@media (hover: none) {
+  .obs-transparent *:hover {
+    transform: none !important;
+  }
 }

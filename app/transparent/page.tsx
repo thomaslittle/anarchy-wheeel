@@ -13,9 +13,7 @@ import { WinnerAnnouncement } from '@/components/wheel/WinnerAnnouncement';
 import { ParticipantList } from '@/components/wheel/ParticipantList';
 import { WheelControls } from '@/components/wheel/WheelControls';
 import { ManualControls } from '@/components/wheel/ManualControls';
-import { HowToUse } from '@/components/wheel/HowToUse';
 
-import { TwitchLogin } from '@/components/auth/TwitchLogin';
 import { UserInfo } from '@/components/auth/UserInfo';
 
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -30,7 +28,7 @@ import { LayoutControlPanel } from '@/components/ui/LayoutControlPanel';
 
 import { cn } from '@/lib/utils';
 
-export default function Home() {
+export default function TransparentMode() {
   const [showWinner, setShowWinner] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [previewWinnerText, setPreviewWinnerText] = useState<string | null>(null);
@@ -48,7 +46,6 @@ export default function Home() {
       setShowWinner(winner);
       playCongratsSound();
       celebrationConfetti();
-      setTimeout(() => setShowWinner(null), 5000);
     }, playTickSound);
   }, [wheel, playCongratsSound, celebrationConfetti, playTickSound]);
 
@@ -145,369 +142,209 @@ export default function Home() {
 
   if (!twitch.user) {
     return (
-      <>
-        <ThemeToggle />
-        <SoundToggle />
-        
-        <div className="min-h-screen p-5">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent">
-              🎯 Twitch Wheel Giveaway
-            </h1>
-            <p className="text-xl text-[var(--text-secondary)]">
-              Professional giveaway tool for Twitch streamers
-            </p>
-          </div>
-
-          <TwitchLogin onLogin={twitch.login} />
+      <div className="obs-transparent min-h-screen flex items-center justify-center">
+        <div className="text-center p-8 bg-black/40 backdrop-blur-md rounded-2xl border border-white/20">
+          <h1 className="text-3xl font-bold mb-4 text-white">
+            🎯 OBS Wheel Mode
+          </h1>
+          <p className="text-white/80 mb-6">
+            Please connect your Twitch account from the main page first
+          </p>
+          <a 
+            href="/" 
+            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            Go to Main Page
+          </a>
         </div>
-        
-        <Notifications 
-          notifications={notifications.notifications}
-          onRemove={notifications.removeNotification}
-        />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <ThemeToggle />
-      <SoundToggle />
-      <SettingsToggle onClick={() => setIsSettingsOpen(true)} />
-      <LayoutToggle 
-        isDragMode={layoutManager.isDragMode}
-        onToggle={layoutManager.toggleDragMode}
-      />
+    <div className="obs-transparent min-h-screen relative">
+      {/* Minimal UI Controls for OBS */}
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <ThemeToggle />
+        <SoundToggle />
+        <SettingsToggle onClick={() => setIsSettingsOpen(true)} />
+        <LayoutToggle 
+          isDragMode={layoutManager.isDragMode}
+          onToggle={layoutManager.toggleDragMode}
+        />
+      </div>
 
-      <div className="min-h-screen p-5">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent">
-            🎯 Twitch Wheel Giveaway
-          </h1>
-          <p className="text-lg text-[var(--text-secondary)]">
-            Professional giveaway tool for Twitch streamers
-          </p>
-        </div>
+      {/* Main Content - Optimized for OBS */}
+      <div className={cn(
+        "relative min-h-screen",
+        layoutManager.isDragMode && "p-4"
+      )}>
+        {layoutManager.isDragMode ? (
+          // OBS Drag Mode Layout - Transparent Background
+          <>
+            {/* Layout Control Panel */}
+            <LayoutControlPanel
+              sectionLayouts={layoutManager.sectionLayouts}
+              onVisibilityToggle={layoutManager.toggleSectionVisibility}
+              onReset={layoutManager.resetLayout}
+              onExitLayoutMode={layoutManager.toggleDragMode}
+            />
 
-        {/* Main Content */}
-        <div className={cn(
-          "relative",
-          layoutManager.isDragMode ? "min-h-screen" : "max-w-7xl mx-auto"
-        )}>
-          {layoutManager.isDragMode ? (
-            // Drag Mode Layout
-            <>
-              {/* Layout Control Panel */}
-              <LayoutControlPanel
-                sectionLayouts={layoutManager.sectionLayouts}
-                onVisibilityToggle={layoutManager.toggleSectionVisibility}
-                onReset={layoutManager.resetLayout}
-                onExitLayoutMode={layoutManager.toggleDragMode}
-              />
-
-              {/* How To Use */}
-              <DraggableSection
-                id="how-to-use"
-                defaultPosition={layoutManager.sectionLayouts.get('how-to-use')?.position || { x: 0, y: 0 }}
-                isLocked={layoutManager.sectionLayouts.get('how-to-use')?.isLocked || false}
-                isVisible={layoutManager.sectionLayouts.get('how-to-use')?.isVisible !== false}
-                onLockToggle={layoutManager.toggleSectionLock}
-                onVisibilityToggle={layoutManager.toggleSectionVisibility}
-                onPositionChange={layoutManager.updateSectionPosition}
-                className="absolute w-80"
-              >
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <HowToUse />
-                </div>
-              </DraggableSection>
-
-              {/* Manual Controls */}
-              <DraggableSection
-                id="manual-controls"
-                defaultPosition={layoutManager.sectionLayouts.get('manual-controls')?.position || { x: 0, y: 200 }}
-                isLocked={layoutManager.sectionLayouts.get('manual-controls')?.isLocked || false}
-                isVisible={layoutManager.sectionLayouts.get('manual-controls')?.isVisible !== false}
-                onLockToggle={layoutManager.toggleSectionLock}
-                onVisibilityToggle={layoutManager.toggleSectionVisibility}
-                onPositionChange={layoutManager.updateSectionPosition}
-                className="absolute w-80"
-              >
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <ManualControls
-                    participants={wheel.participants}
-                    onAddParticipant={wheel.addParticipant}
-                    onRemoveWinner={wheel.removeWinner}
-                    onClearAll={wheel.clearAll}
-                  />
-                </div>
-              </DraggableSection>
-
-              {/* Participant List */}
-              <DraggableSection
-                id="participant-list"
-                defaultPosition={layoutManager.sectionLayouts.get('participant-list')?.position || { x: 0, y: 400 }}
-                isLocked={layoutManager.sectionLayouts.get('participant-list')?.isLocked || false}
-                isVisible={layoutManager.sectionLayouts.get('participant-list')?.isVisible !== false}
-                onLockToggle={layoutManager.toggleSectionLock}
-                onVisibilityToggle={layoutManager.toggleSectionVisibility}
-                onPositionChange={layoutManager.updateSectionPosition}
-                className="absolute w-80"
-              >
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <ParticipantList
-                    participants={wheel.participants}
-                    onRemoveParticipant={wheel.removeParticipant}
-                    onUpdateWeight={wheel.updateParticipantWeight}
-                  />
-                </div>
-              </DraggableSection>
-
-              {/* Wheel Section */}
-              <DraggableSection
-                id="wheel-section"
-                defaultPosition={layoutManager.sectionLayouts.get('wheel-section')?.position || { x: 400, y: 0 }}
-                isLocked={layoutManager.sectionLayouts.get('wheel-section')?.isLocked || false}
-                isVisible={layoutManager.sectionLayouts.get('wheel-section')?.isVisible !== false}
-                onLockToggle={layoutManager.toggleSectionLock}
-                onVisibilityToggle={layoutManager.toggleSectionVisibility}
-                onPositionChange={layoutManager.updateSectionPosition}
-                className="absolute w-[480px]"
-              >
-                <div 
-                  className={cn(
-                    "flex flex-col items-center p-8 rounded-2xl",
-                  )}
-                >
-                  <SpinningWheel
-                    participants={wheel.participants}
-                    currentRotation={wheel.currentRotation}
-                    settings={wheel.settings}
-                    isSpinning={wheel.isSpinning}
-                    className="mb-6"
-                    wheelRef={wheelRef}
-                  />
-
-                  <div className="text-center space-y-4">
-                    <button
-                      onClick={handleSpin}
-                      disabled={wheel.participants.length === 0 || wheel.isSpinning}
-                      className={cn(
-                        "bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]",
-                        "text-white text-2xl font-bold px-8 py-5 rounded-xl",
-                        "transition-all duration-300 ease-in-out",
-                        "hover:shadow-[0_8px_20px_rgba(145,70,255,0.4)]",
-                        "hover:transform hover:-translate-y-1",
-                        "disabled:opacity-60 disabled:cursor-not-allowed",
-                        "disabled:transform-none disabled:shadow-none",
-                        "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2"
-                      )}
-                    >
-                      🎲 SPIN THE WHEEL!
-                    </button>
-
-                    <div 
-                      className={cn(
-                        "p-4 rounded-lg font-medium text-center",
-                        "bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
-                      )}
-                    >
-                      {wheel.isSpinning ? (
-                        <span className="text-[var(--warning-color)]">Spinning...</span>
-                      ) : wheel.participants.length === 0 ? (
-                        <span className="text-[var(--text-secondary)]">Add participants to get started!</span>
-                      ) : wheel.lastWinner ? (
-                        <span className="text-[var(--success-color)]">Winner: {wheel.lastWinner}</span>
-                      ) : (
-                        <span className="text-[var(--success-color)]">
-                          {wheel.participants.length} participants ready!
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </DraggableSection>
-
-              {/* Connection Controls */}
-              <DraggableSection
-                id="connection-controls"
-                defaultPosition={layoutManager.sectionLayouts.get('connection-controls')?.position || { x: 400, y: 500 }}
-                isLocked={layoutManager.sectionLayouts.get('connection-controls')?.isLocked || false}
-                isVisible={layoutManager.sectionLayouts.get('connection-controls')?.isVisible !== false}
-                onLockToggle={layoutManager.toggleSectionLock}
-                onVisibilityToggle={layoutManager.toggleSectionVisibility}
-                onPositionChange={layoutManager.updateSectionPosition}
-                className="absolute w-96"
-              >
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <UserInfo user={twitch.user} onLogout={twitch.logout} className="mb-6" />
-
-                  <WheelControls
-                    connectionStatus={twitch.connectionStatus}
-                    isConnected={twitch.isConnected}
-                    entryKeyword={twitch.entryKeyword}
-                    onConnect={twitch.connectToChat}
-                    onDisconnect={twitch.disconnectFromChat}
-                    onKeywordChange={twitch.setEntryKeyword}
-                  />
-                </div>
-              </DraggableSection>
-            </>
-          ) : (
-            // Normal Layout
-            <div className="flex flex-col xl:flex-row gap-8 items-start">
-              {/* Left Sidebar Sections */}
-              <div className="w-full xl:w-80 space-y-6">
-                {/* How To Use */}
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <HowToUse />
-                </div>
-
-                {/* Manual Controls */}
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <ManualControls
-                    participants={wheel.participants}
-                    onAddParticipant={wheel.addParticipant}
-                    onRemoveWinner={wheel.removeWinner}
-                    onClearAll={wheel.clearAll}
-                  />
-                </div>
-
-                {/* Participant List */}
-                <div 
-                  className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
-                  )}
-                >
-                  <ParticipantList
-                    participants={wheel.participants}
-                    onRemoveParticipant={wheel.removeParticipant}
-                    onUpdateWeight={wheel.updateParticipantWeight}
-                  />
-                </div>
+            {/* Participant List */}
+            <DraggableSection
+              id="participant-list"
+              defaultPosition={layoutManager.sectionLayouts.get('participant-list')?.position || { x: 20, y: 80 }}
+              isLocked={layoutManager.sectionLayouts.get('participant-list')?.isLocked || false}
+              isVisible={layoutManager.sectionLayouts.get('participant-list')?.isVisible !== false}
+              onLockToggle={layoutManager.toggleSectionLock}
+              onVisibilityToggle={layoutManager.toggleSectionVisibility}
+              onPositionChange={layoutManager.updateSectionPosition}
+              className="absolute w-80"
+            >
+              <div className="p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/20">
+                <ParticipantList
+                  participants={wheel.participants}
+                  onRemoveParticipant={wheel.removeParticipant}
+                  onUpdateWeight={wheel.updateParticipantWeight}
+                />
               </div>
+            </DraggableSection>
 
-              {/* Right Side - Wheel and Controls */}
-              <div className="flex-1 space-y-8">
-                {/* Wheel Section */}
-                <div 
+            {/* Wheel Section - Center Stage */}
+            <DraggableSection
+              id="wheel-section"
+              defaultPosition={layoutManager.sectionLayouts.get('wheel-section')?.position || { x: 420, y: 80 }}
+              isLocked={layoutManager.sectionLayouts.get('wheel-section')?.isLocked || false}
+              isVisible={layoutManager.sectionLayouts.get('wheel-section')?.isVisible !== false}
+              onLockToggle={layoutManager.toggleSectionLock}
+              onVisibilityToggle={layoutManager.toggleSectionVisibility}
+              onPositionChange={layoutManager.updateSectionPosition}
+              className="absolute"
+            >
+              <div className="flex flex-col items-center">
+                <SpinningWheel
+                  participants={wheel.participants}
+                  currentRotation={wheel.currentRotation}
+                  settings={wheel.settings}
+                  isSpinning={wheel.isSpinning}
+                  className="mb-4"
+                  wheelRef={wheelRef}
+                />
+                
+                <button
+                  onClick={handleSpin}
+                  disabled={wheel.participants.length === 0 || wheel.isSpinning}
                   className={cn(
-                    "flex flex-col items-center p-8 rounded-2xl",
+                    "bg-gradient-to-r from-purple-600 to-blue-500",
+                    "text-white text-xl font-bold px-6 py-3 rounded-xl",
+                    "transition-all duration-300 ease-in-out",
+                    "hover:shadow-[0_8px_20px_rgba(147,51,234,0.4)]",
+                    "hover:transform hover:-translate-y-1",
+                    "disabled:opacity-60 disabled:cursor-not-allowed",
+                    "disabled:transform-none disabled:shadow-none"
                   )}
                 >
-                  <SpinningWheel
-                    participants={wheel.participants}
-                    currentRotation={wheel.currentRotation}
-                    settings={wheel.settings}
-                    isSpinning={wheel.isSpinning}
-                    className="mb-6"
-                    wheelRef={wheelRef}
-                  />
+                  {wheel.isSpinning ? '🌀 Spinning...' : '🎲 SPIN!'}
+                </button>
+              </div>
+            </DraggableSection>
 
-                  <div className="text-center space-y-4">
-                    <button
-                      onClick={handleSpin}
-                      disabled={wheel.participants.length === 0 || wheel.isSpinning}
-                      className={cn(
-                        "bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]",
-                        "text-white text-2xl font-bold px-8 py-5 rounded-xl",
-                        "transition-all duration-300 ease-in-out",
-                        "hover:shadow-[0_8px_20px_rgba(145,70,255,0.4)]",
-                        "hover:transform hover:-translate-y-1",
-                        "disabled:opacity-60 disabled:cursor-not-allowed",
-                        "disabled:transform-none disabled:shadow-none",
-                        "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2"
-                      )}
-                    >
-                      🎲 SPIN THE WHEEL!
-                    </button>
+            {/* Manual Controls */}
+            <DraggableSection
+              id="manual-controls"
+              defaultPosition={layoutManager.sectionLayouts.get('manual-controls')?.position || { x: 20, y: 400 }}
+              isLocked={layoutManager.sectionLayouts.get('manual-controls')?.isLocked || false}
+              isVisible={layoutManager.sectionLayouts.get('manual-controls')?.isVisible !== false}
+              onLockToggle={layoutManager.toggleSectionLock}
+              onVisibilityToggle={layoutManager.toggleSectionVisibility}
+              onPositionChange={layoutManager.updateSectionPosition}
+              className="absolute w-80"
+            >
+              <div className="p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/20">
+                <ManualControls
+                  participants={wheel.participants}
+                  onAddParticipant={wheel.addParticipant}
+                  onRemoveWinner={wheel.removeWinner}
+                  onClearAll={wheel.clearAll}
+                />
+              </div>
+            </DraggableSection>
 
-                    <div 
-                      className={cn(
-                        "p-4 rounded-lg font-medium text-center",
-                        "bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
-                      )}
-                    >
-                      {wheel.isSpinning ? (
-                        <span className="text-[var(--warning-color)]">Spinning...</span>
-                      ) : wheel.participants.length === 0 ? (
-                        <span className="text-[var(--text-secondary)]">Add participants to get started!</span>
-                      ) : wheel.lastWinner ? (
-                        <span className="text-[var(--success-color)]">Winner: {wheel.lastWinner}</span>
-                      ) : (
-                        <span className="text-[var(--success-color)]">
-                          {wheel.participants.length} participants ready!
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Info and Connection Controls */}
-                <div 
+            {/* Connection Status */}
+            <DraggableSection
+              id="connection-status"
+              defaultPosition={layoutManager.sectionLayouts.get('connection-status')?.position || { x: 800, y: 80 }}
+              isLocked={layoutManager.sectionLayouts.get('connection-status')?.isLocked || false}
+              isVisible={layoutManager.sectionLayouts.get('connection-status')?.isVisible !== false}
+              onLockToggle={layoutManager.toggleSectionLock}
+              onVisibilityToggle={layoutManager.toggleSectionVisibility}
+              onPositionChange={layoutManager.updateSectionPosition}
+              className="absolute w-72"
+            >
+              <div className="p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/20">
+                <UserInfo user={twitch.user} onLogout={twitch.logout} className="mb-4" />
+                <WheelControls
+                  connectionStatus={twitch.connectionStatus}
+                  isConnected={twitch.isConnected}
+                  entryKeyword={twitch.entryKeyword}
+                  onConnect={twitch.connectToChat}
+                  onDisconnect={twitch.disconnectFromChat}
+                  onKeywordChange={twitch.setEntryKeyword}
+                />
+              </div>
+            </DraggableSection>
+          </>
+        ) : (
+          // Simple center wheel mode for OBS
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="flex flex-col items-center">
+              <SpinningWheel
+                participants={wheel.participants}
+                currentRotation={wheel.currentRotation}
+                settings={wheel.settings}
+                isSpinning={wheel.isSpinning}
+                className="mb-6"
+                wheelRef={wheelRef}
+              />
+              
+              <div className="text-center space-y-4">
+                <button
+                  onClick={handleSpin}
+                  disabled={wheel.participants.length === 0 || wheel.isSpinning}
                   className={cn(
-                    "p-6 rounded-2xl",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
+                    "bg-gradient-to-r from-purple-600 to-blue-500",
+                    "text-white text-2xl font-bold px-8 py-4 rounded-xl",
+                    "transition-all duration-300 ease-in-out",
+                    "hover:shadow-[0_8px_20px_rgba(147,51,234,0.4)]",
+                    "hover:transform hover:-translate-y-1",
+                    "disabled:opacity-60 disabled:cursor-not-allowed",
+                    "disabled:transform-none disabled:shadow-none",
+                    "shadow-lg"
                   )}
                 >
-                  <UserInfo user={twitch.user} onLogout={twitch.logout} className="mb-6" />
+                  {wheel.isSpinning ? '🌀 Spinning...' : '🎲 SPIN THE WHEEL!'}
+                </button>
 
-                  <WheelControls
-                    connectionStatus={twitch.connectionStatus}
-                    isConnected={twitch.isConnected}
-                    entryKeyword={twitch.entryKeyword}
-                    onConnect={twitch.connectToChat}
-                    onDisconnect={twitch.disconnectFromChat}
-                    onKeywordChange={twitch.setEntryKeyword}
-                  />
+                <div className="px-6 py-3 rounded-lg font-medium text-center bg-black/40 backdrop-blur-md border border-white/20 text-white">
+                  {wheel.isSpinning ? (
+                    <span className="text-yellow-400">Spinning...</span>
+                  ) : wheel.participants.length === 0 ? (
+                    <span className="text-gray-300">Waiting for participants...</span>
+                  ) : wheel.lastWinner ? (
+                    <span className="text-green-400">Winner: {wheel.lastWinner}</span>
+                  ) : (
+                    <span className="text-blue-400">
+                      {wheel.participants.length} participants ready!
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Modals and Overlays */}
+      {/* Winner Announcement - Full Screen Overlay */}
       <WinnerAnnouncement
         winner={showWinner}
         winnerText={previewWinnerText || wheel.settings.winnerText}
@@ -515,6 +352,7 @@ export default function Home() {
         wheelRef={wheelRef}
       />
 
+      {/* Settings Modal */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -526,10 +364,13 @@ export default function Home() {
         onUpdateWeight={wheel.updateParticipantWeight}
       />
 
-      <Notifications 
-        notifications={notifications.notifications}
-        onRemove={notifications.removeNotification}
-      />
-    </>
+      {/* Notifications - Positioned for OBS */}
+      <div className="fixed bottom-4 right-4 z-40 max-w-md">
+        <Notifications 
+          notifications={notifications.notifications}
+          onRemove={notifications.removeNotification}
+        />
+      </div>
+    </div>
   );
 }

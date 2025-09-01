@@ -31,7 +31,28 @@ export function useTwitch(): UseTwitchReturn {
     status: 'disconnected',
     message: 'Disconnected'
   });
-  const [entryKeyword, setEntryKeyword] = useState('!enter');
+  const [entryKeyword, setEntryKeywordState] = useState('!enter');
+
+  // Load saved entry keyword on mount
+  useEffect(() => {
+    try {
+      const savedKeyword = localStorage.getItem('twitch-entry-keyword');
+      if (savedKeyword) {
+        setEntryKeywordState(savedKeyword);
+      }
+    } catch (error) {
+      console.error('Failed to load entry keyword from localStorage:', error);
+    }
+  }, []);
+
+  const setEntryKeyword = useCallback((keyword: string) => {
+    setEntryKeywordState(keyword);
+    try {
+      localStorage.setItem('twitch-entry-keyword', keyword);
+    } catch (error) {
+      console.error('Failed to save entry keyword to localStorage:', error);
+    }
+  }, []);
   const [moderators] = useState(() => new Set<string>());
 
   const socketRef = useRef<WebSocket | null>(null);
