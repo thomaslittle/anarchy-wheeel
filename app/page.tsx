@@ -193,7 +193,7 @@ export default function Home() {
                 📺 Open OBS Mode
               </a>
               <p className="text-sm text-[var(--text-secondary)] mt-2">
-                Use this link as Browser Source in OBS: <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">http://localhost:3000/transparent</code>
+                Use this link as Browser Source in OBS: <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">https://wheel.crntly.live/transparent</code>
               </p>
             </div>
           )}
