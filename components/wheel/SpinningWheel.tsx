@@ -78,17 +78,30 @@ export function SpinningWheel({
 
       const text = participant.username;
       
-      // Adjust font size based on segment size (minimum 10px, maximum 16px)
-      const baseFontSize = Math.max(10, Math.min(16, (segmentAngle / (Math.PI / 6)) * 14));
-      ctx.font = `bold ${baseFontSize}px Segoe UI`;
+      // Dynamic font sizing based on both segment size and text length
+      const baseSegmentFontSize = Math.max(10, Math.min(16, (segmentAngle / (Math.PI / 6)) * 14));
+      let fontSize = baseSegmentFontSize;
       
-      const textWidth = ctx.measureText(text).width;
+      // Calculate available width (80% of the arc length at text radius)
+      const arcLength = segmentAngle * textRadius;
+      const availableWidth = arcLength * 0.8;
+      
+      // Set initial font and measure text
+      ctx.font = `bold ${fontSize}px Segoe UI`;
+      let textWidth = ctx.measureText(text).width;
+      
+      // Scale down font if text is too wide, but don't scale up beyond baseSegmentFontSize
+      if (textWidth > availableWidth) {
+        fontSize = Math.max(8, (availableWidth / textWidth) * fontSize);
+        ctx.font = `bold ${fontSize}px Segoe UI`;
+        textWidth = ctx.measureText(text).width;
+      }
       
       // Only draw text background and text if segment is large enough
       if (segmentAngle > 0.1) { // Minimum angle threshold for text visibility
         // Text background - make more prominent for image mode
         ctx.fillStyle = isImageMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(-textWidth/2 - 4, -baseFontSize/2 - 2, textWidth + 8, baseFontSize + 4);
+        ctx.fillRect(-textWidth/2 - 4, -fontSize/2 - 2, textWidth + 8, fontSize + 4);
 
         // Text
         ctx.fillStyle = '#ffffff';

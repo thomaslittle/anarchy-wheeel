@@ -1,20 +1,17 @@
 'use client';
 
 import type { Participant } from '@/types';
-import { WeightInput } from '@/components/ui/WeightInput';
 import { cn } from '@/lib/utils';
 
 interface ParticipantListProps {
   participants: Participant[];
   onRemoveParticipant: (username: string) => void;
-  onUpdateWeight?: (username: string, weight: number) => void;
   className?: string;
 }
 
 export function ParticipantList({ 
   participants, 
-  onRemoveParticipant, 
-  onUpdateWeight,
+  onRemoveParticipant,
   className 
 }: ParticipantListProps) {
   return (
@@ -44,19 +41,9 @@ export function ParticipantList({
                   "hover:bg-[var(--bg-tertiary)] transition-colors"
                 )}
               >
-                <span className="text-[var(--text-primary)] font-medium flex-1">
+                <span className="text-[var(--text-primary)] font-medium flex-1 truncate min-w-0">
                   {participant.username}
                 </span>
-                
-                {onUpdateWeight && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--text-secondary)]">Weight:</span>
-                    <WeightInput
-                      value={participant.weight}
-                      onChange={(weight) => onUpdateWeight(participant.username, weight)}
-                    />
-                  </div>
-                )}
                 
                 <button
                   onClick={() => onRemoveParticipant(participant.username)}

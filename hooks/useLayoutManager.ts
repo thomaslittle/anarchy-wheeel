@@ -27,7 +27,8 @@ const DEFAULT_SECTIONS: SectionLayout[] = [
   { id: 'manual-controls', position: { x: 0, y: 200 }, isLocked: false, isVisible: true },
   { id: 'participant-list', position: { x: 0, y: 400 }, isLocked: false, isVisible: true },
   { id: 'wheel-section', position: { x: 400, y: 0 }, isLocked: false, isVisible: true },
-  { id: 'connection-controls', position: { x: 400, y: 500 }, isLocked: false, isVisible: true }
+  { id: 'connection-controls', position: { x: 400, y: 500 }, isLocked: false, isVisible: true },
+  { id: 'obs-controls', position: { x: 800, y: 320 }, isLocked: false, isVisible: true }
 ];
 
 const BASE_LAYOUT_KEY = 'twitch-wheel-base-layout';
@@ -47,7 +48,18 @@ export function useLayoutManager(): UseLayoutManagerReturn {
           ...layout,
           isVisible: layout.isVisible !== undefined ? layout.isVisible : true
         }));
-        setSectionLayouts(new Map(migratedLayouts.map(layout => [layout.id, layout])));
+        
+        // Create a map of existing layouts
+        const layoutMap = new Map(migratedLayouts.map(layout => [layout.id, layout]));
+        
+        // Add any missing default sections
+        DEFAULT_SECTIONS.forEach(defaultSection => {
+          if (!layoutMap.has(defaultSection.id)) {
+            layoutMap.set(defaultSection.id, { ...defaultSection });
+          }
+        });
+        
+        setSectionLayouts(layoutMap);
       } else {
         setSectionLayouts(new Map(DEFAULT_SECTIONS.map(layout => [layout.id, layout])));
       }

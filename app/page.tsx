@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWheel } from '@/hooks/useWheel';
 import { useTwitch } from '@/hooks/useTwitch';
+import { useOBS } from '@/hooks/useOBS';
+import { useChatCommands } from '@/hooks/useChatCommands';
 import { useAudio } from '@/hooks/useAudio';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConfetti } from '@/hooks/useConfetti';
@@ -27,6 +29,7 @@ import { LayoutToggle } from '@/components/ui/LayoutToggle';
 
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { LayoutControlPanel } from '@/components/ui/LayoutControlPanel';
+import { OBSControls } from '@/components/obs/OBSControls';
 
 import { cn } from '@/lib/utils';
 
@@ -38,10 +41,24 @@ export default function Home() {
 
   const wheel = useWheel();
   const twitch = useTwitch();
+  const obs = useOBS();
   const { playCongratsSound, playTickSound } = useAudio();
   const notifications = useNotifications();
   const { celebrationConfetti } = useConfetti();
   const layoutManager = useLayoutManager();
+  
+  const chatCommands = useChatCommands({
+    obs,
+    onSendChatMessage: twitch.sendChatMessage,
+    onNotification: (message, type) => notifications.addNotification(message, type),
+    onRemoveParticipant: wheel.removeParticipant
+  });
+
+  // Debug: Log OBS connection status when it changes
+  useEffect(() => {
+    console.log('Main page OBS status changed:', obs.connectionStatus, 'isConnected:', obs.isConnected);
+    console.log('Main page OBS instance ID:', obs);
+  }, [obs]);
 
   const handleSpin = useCallback(() => {
     wheel.spinWheel((winner) => {
@@ -55,7 +72,13 @@ export default function Home() {
   useEffect(() => {
     if (!twitch.setOnChatMessage) return;
 
-    twitch.setOnChatMessage((username, message, isModerator, isBroadcaster) => {
+    twitch.setOnChatMessage(async (username, message, isModerator, isBroadcaster) => {
+      console.log('Main app received chat message:', { username, message, isModerator, isBroadcaster });
+      
+      // Handle chat commands first (including OBS commands)
+      console.log('Calling chatCommands.handleChatMessage...');
+      await chatCommands.handleChatMessage(username, message, isModerator, isBroadcaster);
+
       // Handle entry with keyword
       if (message.toLowerCase() === twitch.entryKeyword.toLowerCase()) {
         const success = wheel.addParticipant(username);
@@ -128,7 +151,7 @@ export default function Home() {
         }
       }
     });
-  }, [twitch, wheel, notifications, handleSpin]);
+  }, [twitch, wheel, notifications, handleSpin, chatCommands]);
 
   const handlePreviewWinner = (winnerText: string) => {
     setPreviewWinnerText(winnerText);
@@ -193,7 +216,7 @@ export default function Home() {
                 📺 Open OBS Mode
               </a>
               <p className="text-sm text-[var(--text-secondary)] mt-2">
-                Use this link as Browser Source in OBS: <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">https://wheel.crntly.live/transparent</code>
+                OBS Browser Source URL: <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">https://wheel.crntly.live</code> (add <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">/transparent</code> for transparent mode)
               </p>
             </div>
           )}
@@ -285,7 +308,6 @@ export default function Home() {
                   <ParticipantList
                     participants={wheel.participants}
                     onRemoveParticipant={wheel.removeParticipant}
-                    onUpdateWeight={wheel.updateParticipantWeight}
                   />
                 </div>
               </DraggableSection>
@@ -370,12 +392,12 @@ export default function Home() {
               >
                 <div
                   className={cn(
-                    "p-6 rounded-2xl",
+                    "p-6 rounded-2xl space-y-6",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
                     "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
                   )}
                 >
-                  <UserInfo user={twitch.user} onLogout={twitch.logout} className="mb-6" />
+                  <UserInfo user={twitch.user} onLogout={twitch.logout} />
 
                   <WheelControls
                     connectionStatus={twitch.connectionStatus}
@@ -385,6 +407,28 @@ export default function Home() {
                     onDisconnect={twitch.disconnectFromChat}
                     onKeywordChange={twitch.setEntryKeyword}
                   />
+                </div>
+              </DraggableSection>
+
+              {/* OBS Controls */}
+              <DraggableSection
+                id="obs-controls"
+                defaultPosition={layoutManager.sectionLayouts.get('obs-controls')?.position || { x: 0, y: 600 }}
+                isLocked={layoutManager.sectionLayouts.get('obs-controls')?.isLocked || false}
+                isVisible={layoutManager.sectionLayouts.get('obs-controls')?.isVisible !== false}
+                onLockToggle={layoutManager.toggleSectionLock}
+                onVisibilityToggle={layoutManager.toggleSectionVisibility}
+                onPositionChange={layoutManager.updateSectionPosition}
+                className="absolute w-80"
+              >
+                <div
+                  className={cn(
+                    "p-6 rounded-2xl",
+                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
+                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
+                  )}
+                >
+                  <OBSControls obs={obs} />
                 </div>
               </DraggableSection>
             </>
@@ -431,7 +475,6 @@ export default function Home() {
                   <ParticipantList
                     participants={wheel.participants}
                     onRemoveParticipant={wheel.removeParticipant}
-                    onUpdateWeight={wheel.updateParticipantWeight}
                   />
                 </div>
               </div>
@@ -497,12 +540,12 @@ export default function Home() {
                 {/* User Info and Connection Controls */}
                 <div
                   className={cn(
-                    "p-6 rounded-2xl",
+                    "p-6 rounded-2xl space-y-6",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
                     "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
                   )}
                 >
-                  <UserInfo user={twitch.user} onLogout={twitch.logout} className="mb-6" />
+                  <UserInfo user={twitch.user} onLogout={twitch.logout} />
 
                   <WheelControls
                     connectionStatus={twitch.connectionStatus}
@@ -512,6 +555,17 @@ export default function Home() {
                     onDisconnect={twitch.disconnectFromChat}
                     onKeywordChange={twitch.setEntryKeyword}
                   />
+                </div>
+
+                {/* OBS Controls */}
+                <div
+                  className={cn(
+                    "p-6 rounded-2xl",
+                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
+                    "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]"
+                  )}
+                >
+                  <OBSControls obs={obs} />
                 </div>
               </div>
             </div>

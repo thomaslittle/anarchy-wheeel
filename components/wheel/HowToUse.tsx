@@ -14,11 +14,10 @@ export function HowToUse({ className }: HowToUseProps) {
       </h3>
       
       <div className="space-y-2 text-[var(--text-secondary)] text-sm">
-        <p><strong>1.</strong> Set your entry keyword</p>
-        <p><strong>2.</strong> Click &quot;Connect to Chat&quot;</p>
-        <p><strong>3.</strong> Tell viewers to type the keyword</p>
-        <p><strong>4.</strong> Mods can type !spin to spin</p>
-        <p><strong>5.</strong> Or click the spin button manually!</p>
+        <p><strong>1.</strong> Set your entry keyword & connect to chat</p>
+        <p><strong>2.</strong> Tell viewers to type the keyword to enter</p>
+        <p><strong>3.</strong> Use mod command !spin to spin the wheel</p>
+        <p><strong>4.</strong> Or control manually with the buttons!</p>
       </div>
     </div>
   );

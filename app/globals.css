@@ -157,6 +157,12 @@ body.obs-transparent {
   z-index: 100;
 }
 
+/* Layout control panel text visibility for transparent mode */
+.obs-transparent .layout-control-text {
+  color: #000000 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+}
+
 /* Disable hover effects that might not work well in OBS */
 @media (hover: none) {
   .obs-transparent *:hover {

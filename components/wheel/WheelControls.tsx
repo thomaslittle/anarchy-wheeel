@@ -79,10 +79,11 @@ export function WheelControls({
           )}
         >
           <div className="font-semibold text-[var(--text-primary)] mb-2">Chat Commands:</div>
-          <div className="text-[var(--text-secondary)]">!spin - Mods only: spin the wheel</div>
-          <div className="text-[var(--text-secondary)]">!addentry {'{'}username{'}'} - Mods only: add a user to the wheel</div>
-          <div className="text-[var(--text-secondary)]">!removewinner - Mods only: remove the most recent winner</div>
-          <div className="text-[var(--text-secondary)]">!weight {'{'}username{'}'} {'{'}2.5{'}'} - Mods only: set user&apos;s win probability (0.1x - 10x)</div>
+          <div className="text-[var(--text-secondary)]">!spin - spin the wheel</div>
+          <div className="text-[var(--text-secondary)]">!addentry {'{'}username{'}'} - add a user to the wheel</div>
+          <div className="text-[var(--text-secondary)]">!removeentry {'{'}username{'}'} - remove a user from the wheel</div>
+          <div className="text-[var(--text-secondary)]">!removewinner - remove the most recent winner</div>
+          <div className="text-[var(--text-secondary)]">!weight {'{'}username{'}'} {'{'}2.5{'}'} - set user&apos;s win probability (0.1x - 10x)</div>
         </div>
       </div>
 

@@ -21,7 +21,9 @@ const SECTION_NAMES: Record<string, string> = {
   'manual-controls': 'Manual Controls',
   'participant-list': 'Participant List',
   'wheel-section': 'Spinning Wheel',
-  'connection-controls': 'Connection Controls'
+  'connection-controls': 'Connection Controls',
+  'connection-status': 'Connection Status',
+  'obs-controls': 'OBS Controls'
 };
 
 export function LayoutControlPanel({ 
@@ -36,7 +38,9 @@ export function LayoutControlPanel({
         "fixed top-4 left-4 z-50",
         "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
         "backdrop-blur-xl shadow-[0_8px_32px_var(--shadow-color)]",
-        "rounded-xl p-4 w-64"
+        "rounded-xl p-4 w-64",
+        // Add stronger background for transparent pages
+        "obs-transparent:bg-black/80 obs-transparent:border-white/20"
       )}
     >
       <div className="mb-3">
@@ -49,7 +53,7 @@ export function LayoutControlPanel({
       <div className="space-y-2 mb-4">
         {Array.from(sectionLayouts.entries()).map(([id, layout]) => (
           <div key={id} className="flex items-center justify-between">
-            <span className="text-xs text-[var(--text-primary)] truncate">
+            <span className="text-xs text-[var(--text-primary)] truncate layout-control-text">
               {SECTION_NAMES[id] || id}
             </span>
             <button

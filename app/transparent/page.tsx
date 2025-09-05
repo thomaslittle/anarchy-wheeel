@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useWheel } from '@/hooks/useWheel';
 import { useTwitch } from '@/hooks/useTwitch';
+import { useOBS } from '@/hooks/useOBS';
+import { useChatCommands } from '@/hooks/useChatCommands';
 import { useAudio } from '@/hooks/useAudio';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useConfetti } from '@/hooks/useConfetti';
@@ -26,6 +28,7 @@ import { LayoutToggle } from '@/components/ui/LayoutToggle';
 
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { LayoutControlPanel } from '@/components/ui/LayoutControlPanel';
+import { OBSControls } from '@/components/obs/OBSControls';
 
 import { cn } from '@/lib/utils';
 
@@ -37,10 +40,30 @@ export default function TransparentMode() {
 
   const wheel = useWheel();
   const twitch = useTwitch();
+  const obs = useOBS();
   const { playCongratsSound, playTickSound } = useAudio();
   const notifications = useNotifications();
   const { celebrationConfetti } = useConfetti();
   const layoutManager = useLayoutManager();
+  
+  const chatCommands = useChatCommands({
+    obs,
+    onSendChatMessage: twitch.sendChatMessage,
+    onNotification: (message, type) => notifications.addNotification(message, type),
+    onRemoveParticipant: wheel.removeParticipant
+  });
+
+  // Debug: Log chatCommands creation
+  useEffect(() => {
+    console.log('Transparent page chatCommands created:', chatCommands);
+    console.log('Transparent page available commands:', chatCommands.getAvailableCommands());
+  }, [chatCommands]);
+
+  // Debug: Log OBS connection status when it changes
+  useEffect(() => {
+    console.log('Transparent page OBS status changed:', obs.connectionStatus, 'isConnected:', obs.isConnected);
+    console.log('Transparent page OBS instance ID:', obs);
+  }, [obs]);
 
   const handleSpin = useCallback(() => {
     wheel.spinWheel((winner) => {
@@ -54,7 +77,15 @@ export default function TransparentMode() {
   useEffect(() => {
     if (!twitch.setOnChatMessage) return;
 
-    twitch.setOnChatMessage((username, message, isModerator, isBroadcaster) => {
+    twitch.setOnChatMessage(async (username, message, isModerator, isBroadcaster) => {
+      console.log('Transparent app received chat message:', { username, message, isModerator, isBroadcaster });
+      
+      // Handle chat commands first (including OBS commands)
+      console.log('Transparent page calling chatCommands.handleChatMessage...');
+      console.log('Transparent page chatCommands instance:', chatCommands);
+      console.log('Transparent page OBS at message time:', { isConnected: obs.isConnected, status: obs.connectionStatus });
+      await chatCommands.handleChatMessage(username, message, isModerator, isBroadcaster);
+
       // Handle entry with keyword
       if (message.toLowerCase() === twitch.entryKeyword.toLowerCase()) {
         const success = wheel.addParticipant(username);
@@ -127,7 +158,7 @@ export default function TransparentMode() {
         }
       }
     });
-  }, [twitch, wheel, notifications, handleSpin]);
+  }, [twitch, wheel, notifications, handleSpin, chatCommands]);
 
   const handlePreviewWinner = (winnerText: string) => {
     setPreviewWinnerText(winnerText);
@@ -206,7 +237,6 @@ export default function TransparentMode() {
                 <ParticipantList
                   participants={wheel.participants}
                   onRemoveParticipant={wheel.removeParticipant}
-                  onUpdateWeight={wheel.updateParticipantWeight}
                 />
               </div>
             </DraggableSection>
@@ -271,19 +301,19 @@ export default function TransparentMode() {
               </div>
             </DraggableSection>
 
-            {/* Connection Status */}
+            {/* Connection Controls */}
             <DraggableSection
-              id="connection-status"
-              defaultPosition={layoutManager.sectionLayouts.get('connection-status')?.position || { x: 800, y: 80 }}
-              isLocked={layoutManager.sectionLayouts.get('connection-status')?.isLocked || false}
-              isVisible={layoutManager.sectionLayouts.get('connection-status')?.isVisible !== false}
+              id="connection-controls"
+              defaultPosition={layoutManager.sectionLayouts.get('connection-controls')?.position || { x: 800, y: 80 }}
+              isLocked={layoutManager.sectionLayouts.get('connection-controls')?.isLocked || false}
+              isVisible={layoutManager.sectionLayouts.get('connection-controls')?.isVisible !== false}
               onLockToggle={layoutManager.toggleSectionLock}
               onVisibilityToggle={layoutManager.toggleSectionVisibility}
               onPositionChange={layoutManager.updateSectionPosition}
               className="absolute w-72"
             >
-              <div className="p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/20">
-                <UserInfo user={twitch.user} onLogout={twitch.logout} className="mb-4" />
+              <div className="p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 space-y-4">
+                <UserInfo user={twitch.user} onLogout={twitch.logout} />
                 <WheelControls
                   connectionStatus={twitch.connectionStatus}
                   isConnected={twitch.isConnected}
@@ -292,6 +322,22 @@ export default function TransparentMode() {
                   onDisconnect={twitch.disconnectFromChat}
                   onKeywordChange={twitch.setEntryKeyword}
                 />
+              </div>
+            </DraggableSection>
+
+            {/* OBS Controls */}
+            <DraggableSection
+              id="obs-controls"
+              defaultPosition={layoutManager.sectionLayouts.get('obs-controls')?.position || { x: 800, y: 320 }}
+              isLocked={layoutManager.sectionLayouts.get('obs-controls')?.isLocked || false}
+              isVisible={layoutManager.sectionLayouts.get('obs-controls')?.isVisible !== false}
+              onLockToggle={layoutManager.toggleSectionLock}
+              onVisibilityToggle={layoutManager.toggleSectionVisibility}
+              onPositionChange={layoutManager.updateSectionPosition}
+              className="absolute w-80"
+            >
+              <div className="p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/20">
+                <OBSControls obs={obs} />
               </div>
             </DraggableSection>
           </>

@@ -16,6 +16,7 @@ interface UseTwitchReturn {
   setEntryKeyword: (keyword: string) => void;
   onChatMessage: ((username: string, message: string, isModerator: boolean, isBroadcaster: boolean) => void) | null;
   setOnChatMessage: (callback: (username: string, message: string, isModerator: boolean, isBroadcaster: boolean) => void) => void;
+  sendChatMessage: (message: string) => boolean;
 }
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID || '';
@@ -300,6 +301,22 @@ export function useTwitch(): UseTwitchReturn {
     onChatMessageRef.current = callback;
   }, []);
 
+  const sendChatMessage = useCallback((message: string) => {
+    if (!socketRef.current || !isConnected || !user) {
+      console.warn('Cannot send chat message: not connected to Twitch chat. Message was:', message);
+      return false;
+    }
+
+    try {
+      socketRef.current.send(`PRIVMSG #${user.login} :${message}\r\n`);
+      console.log('Sent chat message:', message);
+      return true;
+    } catch (error) {
+      console.error('Failed to send chat message:', error);
+      return false;
+    }
+  }, [isConnected, user]);
+
   return {
     user,
     connectionStatus,
@@ -313,5 +330,6 @@ export function useTwitch(): UseTwitchReturn {
     setEntryKeyword,
     onChatMessage: onChatMessageRef.current,
     setOnChatMessage,
+    sendChatMessage,
   };
 }
