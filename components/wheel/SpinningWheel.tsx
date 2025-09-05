@@ -82,9 +82,17 @@ export function SpinningWheel({
       const baseSegmentFontSize = Math.max(10, Math.min(16, (segmentAngle / (Math.PI / 6)) * 14));
       let fontSize = baseSegmentFontSize;
       
-      // Calculate available width (80% of the arc length at text radius)
+      // Calculate available width more conservatively
+      // Use the arc length at text radius, but account for:
+      // 1. The segment gets narrower toward the center
+      // 2. We need padding from segment boundaries
       const arcLength = segmentAngle * textRadius;
-      const availableWidth = arcLength * 0.8;
+      
+      // Use 60% of arc length for better boundary respect
+      // Also consider radial constraints - text shouldn't go too close to edges
+      const maxRadialWidth = (radius - textRadius) * 1.4; // Available radial space
+      const maxAngularWidth = arcLength * 0.6; // 60% of arc length for padding
+      const availableWidth = Math.min(maxRadialWidth, maxAngularWidth);
       
       // Set initial font and measure text
       ctx.font = `bold ${fontSize}px Segoe UI`;
@@ -92,7 +100,7 @@ export function SpinningWheel({
       
       // Scale down font if text is too wide, but don't scale up beyond baseSegmentFontSize
       if (textWidth > availableWidth) {
-        fontSize = Math.max(8, (availableWidth / textWidth) * fontSize);
+        fontSize = Math.max(7, (availableWidth / textWidth) * fontSize);
         ctx.font = `bold ${fontSize}px Segoe UI`;
         textWidth = ctx.measureText(text).width;
       }
