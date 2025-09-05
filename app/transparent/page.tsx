@@ -63,7 +63,7 @@ export default function TransparentMode() {
   useEffect(() => {
     console.log('Transparent page OBS status changed:', obs.connectionStatus, 'isConnected:', obs.isConnected);
     console.log('Transparent page OBS instance ID:', obs);
-  }, [obs]);
+  }, [obs, obs.connectionStatus, obs.isConnected]);
 
   const handleSpin = useCallback(() => {
     wheel.spinWheel((winner) => {
@@ -158,7 +158,7 @@ export default function TransparentMode() {
         }
       }
     });
-  }, [twitch, wheel, notifications, handleSpin, chatCommands]);
+  }, [twitch, wheel, notifications, handleSpin, chatCommands, obs.connectionStatus, obs.isConnected]);
 
   const handlePreviewWinner = (winnerText: string) => {
     setPreviewWinnerText(winnerText);

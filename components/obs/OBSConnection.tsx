@@ -230,7 +230,7 @@ export function OBSConnection({ obs, className }: OBSConnectionProps) {
               <li>Enable WebSocket Server in OBS (Tools → WebSocket Server Settings)</li>
               <li>Add Browser Source with URL: <code className="bg-[var(--bg-primary)] px-1 rounded">https://wheel.crntly.live</code> (add <code className="bg-[var(--bg-primary)] px-1 rounded">/transparent</code> if using transparent mode)</li>
               <li>Enter your WebSocket settings and browser source name below</li>
-              <li>Click the "Connect" button to establish the connection</li>
+              <li>Click the &quot;Connect&quot; button to establish the connection</li>
               <li>Use OBS chat commands like !showwheel, !hidewheel, !togglewheel</li>
             </ol>
             
