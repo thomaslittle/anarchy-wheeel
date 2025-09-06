@@ -15,6 +15,8 @@ interface UseChatCommandsProps {
   onSendChatMessage?: (message: string) => boolean;
   onNotification?: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   onRemoveParticipant?: (username: string) => boolean;
+  onClearAll?: () => void;
+  onUpdateKeyword?: (keyword: string) => void;
 }
 
 interface UseChatCommandsReturn {
@@ -27,7 +29,9 @@ export function useChatCommands({
   obs,
   onSendChatMessage,
   onNotification,
-  onRemoveParticipant
+  onRemoveParticipant,
+  onClearAll,
+  onUpdateKeyword
 }: UseChatCommandsProps): UseChatCommandsReturn {
   const commandsRef = useRef<ChatCommandHandler[]>([]);
 
@@ -190,15 +194,76 @@ export function useChatCommands({
             onNotification?.(`🎯 Available commands: ${availableCommands}`, 'info');
           }
         }
+      },
+      {
+        command: '!clearwheel',
+        description: 'Remove all entries from the wheel',
+        requiresModerator: true,
+        handler: async (username: string) => {
+          if (!onClearAll) {
+            onNotification?.('❌ Clear wheel function not available.', 'error');
+            return;
+          }
+
+          try {
+            onClearAll();
+            onNotification?.(`🗑️ ${username} cleared all entries from the wheel!`, 'success');
+            onSendChatMessage?.('🗑️ All entries have been cleared from the wheel.');
+          } catch (error) {
+            console.error('Error clearing wheel:', error);
+            onNotification?.('❌ Error clearing wheel.', 'error');
+            onSendChatMessage?.('❌ Error clearing wheel. Please try again.');
+          }
+        }
+      },
+      {
+        command: '!keyword',
+        description: 'Update the giveaway keyword (!keyword {new_keyword})',
+        requiresModerator: true,
+        handler: async (username: string, args: string[]) => {
+          if (!onUpdateKeyword) {
+            onNotification?.('❌ Update keyword function not available.', 'error');
+            return;
+          }
+
+          if (args.length === 0) {
+            onNotification?.('❌ Usage: !keyword {new_keyword}', 'error');
+            onSendChatMessage?.(`@${username} Usage: !keyword {new_keyword}`);
+            return;
+          }
+
+          const newKeyword = args[0];
+          
+          // Basic validation for keyword format
+          if (!newKeyword.startsWith('!') || newKeyword.length < 2) {
+            onNotification?.('❌ Keyword must start with ! and be at least 2 characters long.', 'error');
+            onSendChatMessage?.(`@${username} Keyword must start with ! and be at least 2 characters long.`);
+            return;
+          }
+
+          try {
+            onUpdateKeyword(newKeyword);
+            onNotification?.(`🔄 ${username} changed the entry keyword to: ${newKeyword}`, 'success');
+            onSendChatMessage?.(`🔄 Entry keyword changed to: ${newKeyword}`);
+          } catch (error) {
+            console.error('Error updating keyword:', error);
+            onNotification?.('❌ Error updating keyword.', 'error');
+            onSendChatMessage?.('❌ Error updating keyword. Please try again.');
+          }
+        }
       }
     ];
-  }, [obs, onNotification, onSendChatMessage, onRemoveParticipant]);
+  }, [obs.isConnected, obs.connectionStatus, obs.showBrowserSource, obs.hideBrowserSource, obs.toggleBrowserSource, onNotification, onSendChatMessage, onRemoveParticipant, onClearAll, onUpdateKeyword]);
 
   // Initialize commands when OBS instance changes or on first use
   useEffect(() => {
-    console.log('Reinitializing commands due to OBS instance change:', obs.isConnected, obs.connectionStatus);
+    // Only log when connection status actually changes
+    const shouldLog = obs.connectionStatus.status !== 'disconnected' || !initializeCommands.toString().includes('connected');
+    if (shouldLog) {
+      console.log('Reinitializing commands due to OBS change:', obs.isConnected, obs.connectionStatus);
+    }
     initializeCommands();
-  }, [obs, initializeCommands]);
+  }, [obs.isConnected, obs.connectionStatus, initializeCommands]);
 
   const sendChatMessage = useCallback((message: string) => {
     return onSendChatMessage?.(message) || false;

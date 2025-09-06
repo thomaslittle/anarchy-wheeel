@@ -1,3 +1,4 @@
+
 export interface TwitchUser {
   id: string;
   login: string;
@@ -12,6 +13,8 @@ export interface WheelSettings {
   spinDuration: number;
   wheelImage?: string;
   wheelMode: 'colors' | 'image';
+  autoAnnounceWinner: boolean;
+  chatAnnouncementMessage: string;
 }
 
 export interface Participant {

@@ -30,10 +30,11 @@ import { LayoutToggle } from '@/components/ui/LayoutToggle';
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { LayoutControlPanel } from '@/components/ui/LayoutControlPanel';
 import { OBSControls } from '@/components/obs/OBSControls';
+import { FormatNavigation } from '@/components/format/FormatNavigation';
 
 import { cn } from '@/lib/utils';
 
-export default function Home() {
+export default function Wheel2D() {
   const [showWinner, setShowWinner] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [previewWinnerText, setPreviewWinnerText] = useState<string | null>(null);
@@ -53,13 +54,19 @@ export default function Home() {
     onNotification: (message, type) => notifications.addNotification(message, type),
     onRemoveParticipant: wheel.removeParticipant,
     onClearAll: wheel.clearAll,
-    onUpdateKeyword: twitch.setEntryKeyword
+    onUpdateKeyword: (keyword: string) => {
+      twitch.setEntryKeyword(keyword);
+      // If connected, reconnect with new keyword
+      if (twitch.isConnected) {
+        twitch.connectToChat(keyword);
+      }
+    }
   });
 
   // Debug: Log OBS connection status when it changes
   useEffect(() => {
-    console.log('Main page OBS status changed:', obs.connectionStatus, 'isConnected:', obs.isConnected);
-  }, [obs.connectionStatus, obs.isConnected]);
+    console.log('2D Wheel page OBS status changed:', obs.connectionStatus, 'isConnected:', obs.isConnected);
+  }, [obs]);
 
   const handleSpin = useCallback(() => {
     wheel.spinWheel((winner) => {
@@ -67,33 +74,20 @@ export default function Home() {
       playCongratsSound();
       celebrationConfetti();
       
-      // Auto-announce winner to chat if enabled
+      // Auto-announce winner if setting is enabled
       if (wheel.settings.autoAnnounceWinner && twitch.isConnected) {
-        console.log('Attempting to announce winner to chat:', winner);
-        console.log('Twitch connection status:', twitch.connectionStatus);
-        console.log('Twitch isConnected:', twitch.isConnected);
-        const customMessage = wheel.settings.chatAnnouncementMessage.replace('{winner}', winner);
-        const chatSent = twitch.sendChatMessage(customMessage);
-        if (chatSent) {
-          notifications.addNotification(`📢 Winner announced to chat: ${winner}`, 'success');
-        } else {
-          notifications.addNotification(`❌ Failed to announce winner to chat. Check console for details.`, 'error');
-        }
-      } else if (wheel.settings.autoAnnounceWinner && !twitch.isConnected) {
-        notifications.addNotification(`❌ Cannot announce winner: not connected to Twitch chat`, 'warning');
+        const announcement = `🎉 Congratulations ${winner}! You won the giveaway! 🎉`;
+        twitch.sendChatMessage(announcement);
       }
     }, playTickSound);
-  }, [wheel, playCongratsSound, celebrationConfetti, playTickSound, twitch, notifications]);
+  }, [wheel, playCongratsSound, celebrationConfetti, playTickSound, twitch]);
 
   // Set up Twitch chat message handler
   useEffect(() => {
     if (!twitch.setOnChatMessage) return;
 
     twitch.setOnChatMessage(async (username, message, isModerator, isBroadcaster) => {
-      console.log('Main app received chat message:', { username, message, isModerator, isBroadcaster });
-      
       // Handle chat commands first (including OBS commands)
-      console.log('Calling chatCommands.handleChatMessage...');
       await chatCommands.handleChatMessage(username, message, isModerator, isBroadcaster);
 
       // Handle entry with keyword
@@ -179,16 +173,17 @@ export default function Home() {
   if (!twitch.user) {
     return (
       <>
+        <FormatNavigation currentFormat="2d-wheel" />
         <ThemeToggle />
         <SoundToggle />
 
         <div className="min-h-screen p-5">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent">
-              🎯 Twitch Wheel Giveaway
+              🎡 2D Spinning Wheel
             </h1>
             <p className="text-xl text-[var(--text-secondary)]">
-              Professional giveaway tool for Twitch streamers
+              Classic wheel giveaway format
             </p>
           </div>
 
@@ -205,6 +200,7 @@ export default function Home() {
 
   return (
     <>
+      <FormatNavigation currentFormat="2d-wheel" />
       <ThemeToggle />
       <SoundToggle />
       <SettingsToggle onClick={() => setIsSettingsOpen(true)} />
@@ -217,24 +213,21 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent">
-            🎯 Twitch Wheel Giveaway
+            🎡 2D Spinning Wheel
           </h1>
           <p className="text-lg text-[var(--text-secondary)]">
-            Professional giveaway tool for Twitch streamers
+            Classic wheel giveaway with customizable segments
           </p>
           {twitch.user && (
             <div className="mt-4">
               <a 
-                href="/transparent" 
+                href="/2d-wheel/transparent" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
               >
                 📺 Open OBS Mode
               </a>
-              <p className="text-sm text-[var(--text-secondary)] mt-2">
-                OBS Browser Source URL: <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">https://wheel.crntly.live</code> (add <code className="bg-[var(--bg-tertiary)] px-2 py-1 rounded text-xs">/transparent</code> for transparent mode)
-              </p>
             </div>
           )}
         </div>

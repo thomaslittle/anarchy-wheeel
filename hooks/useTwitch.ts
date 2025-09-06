@@ -24,7 +24,7 @@ const REDIRECT_URI = process.env.NEXT_PUBLIC_TWITCH_REDIRECT_URI || '';
 const API_URL = process.env.NEXT_PUBLIC_TWITCH_API_URL || 'https://api.twitch.tv/helix';
 const AUTH_URL = process.env.NEXT_PUBLIC_TWITCH_AUTH_URL || 'https://id.twitch.tv/oauth2/authorize';
 const WEBSOCKET_URL = process.env.NEXT_PUBLIC_TWITCH_WEBSOCKET_URL || 'wss://irc-ws.chat.twitch.tv:443';
-const SCOPES = ['chat:read', 'user:read:email'];
+const SCOPES = ['chat:read', 'chat:edit', 'user:read:email'];
 
 export function useTwitch(): UseTwitchReturn {
   const [user, setUser] = useState<TwitchUser | null>(null);
@@ -220,6 +220,11 @@ export function useTwitch(): UseTwitchReturn {
     
     for (const line of lines) {
       if (!line) continue;
+      
+      // Reduce spam - only log important messages
+      if (line.includes('001') || line.includes('366') || line.includes('JOIN') || line.includes('PRIVMSG')) {
+        console.log('Twitch IRC message:', line);
+      }
 
       // Handle PING
       if (line.startsWith('PING')) {
@@ -231,20 +236,32 @@ export function useTwitch(): UseTwitchReturn {
         continue;
       }
 
-      // Handle authentication response
-      if (line.includes('001') || line.includes('Welcome')) {
+      // Handle authentication response (only the initial server welcome)
+      if (line.includes(':tmi.twitch.tv 001') || line.includes('Welcome, GLHF!')) {
+        console.log('Twitch authentication successful');
         setConnectionStatus({
           status: 'connecting',
-          message: 'Authenticated'
+          message: 'Authenticated, joining channel...'
         });
       }
 
       // Handle successful channel join
       if (line.includes('366') && user && line.includes(`#${user.login}`)) {
+        console.log('Twitch channel join successful');
         setConnectionStatus({
           status: 'connected',
           message: `Connected to #${user.login}`
         });
+      }
+      
+      // Handle JOIN confirmation
+      if (line.includes(' JOIN ') && user && line.includes(`#${user.login}`)) {
+        console.log('Twitch JOIN confirmation received');
+      }
+      
+      // Handle other IRC response codes
+      if (line.includes(' 353 ') || line.includes(' 366 ')) {
+        console.log('Twitch IRC response code:', line);
       }
 
       // Handle chat messages

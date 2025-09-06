@@ -83,6 +83,8 @@ export function WheelControls({
           <div className="text-[var(--text-secondary)]">!addentry {'{'}username{'}'} - add a user to the wheel</div>
           <div className="text-[var(--text-secondary)]">!removeentry {'{'}username{'}'} - remove a user from the wheel</div>
           <div className="text-[var(--text-secondary)]">!removewinner - remove the most recent winner</div>
+          <div className="text-[var(--text-secondary)]">!clearwheel - remove all entries from the wheel</div>
+          <div className="text-[var(--text-secondary)]">!keyword {'{'}new_keyword{'}'} - update the entry keyword</div>
           <div className="text-[var(--text-secondary)]">!weight {'{'}username{'}'} {'{'}2.5{'}'} - set user&apos;s win probability (0.1x - 10x)</div>
         </div>
       </div>

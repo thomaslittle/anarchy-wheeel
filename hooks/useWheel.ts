@@ -10,6 +10,7 @@ const DEFAULT_COLORS = [
 
 const DEFAULT_WINNER_TEXT = '🎉 WINNER! 🎉\n{winner}';
 const DEFAULT_SPIN_DURATION = 4000;
+const DEFAULT_CHAT_ANNOUNCEMENT = '🎉 CONGRATULATIONS {winner}! 🎉 You won the giveaway!';
 
 interface UseWheelReturn {
   participants: Participant[];
@@ -38,6 +39,8 @@ export function useWheel(): UseWheelReturn {
     spinDuration: DEFAULT_SPIN_DURATION,
     wheelImage: undefined,
     wheelMode: 'colors',
+    autoAnnounceWinner: false,
+    chatAnnouncementMessage: DEFAULT_CHAT_ANNOUNCEMENT,
   });
 
   const animationRef = useRef<number | undefined>(undefined);

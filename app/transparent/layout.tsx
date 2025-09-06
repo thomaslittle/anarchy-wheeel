@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../globals.css";
+import { TransparentWrapper } from "./TransparentWrapper";
 
 export const metadata: Metadata = {
   title: "🎯 OBS Wheel Mode - Twitch Wheel Giveaway",
@@ -11,18 +12,5 @@ export default function TransparentLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" className="obs-transparent" style={{ background: 'transparent' }}>
-      <body 
-        className="obs-transparent antialiased" 
-        style={{ 
-          background: 'transparent',
-          backgroundColor: 'transparent',
-          backgroundImage: 'none'
-        }}
-      >
-        {children}
-      </body>
-    </html>
-  );
+  return <TransparentWrapper>{children}</TransparentWrapper>;
 }

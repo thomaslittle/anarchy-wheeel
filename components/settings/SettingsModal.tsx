@@ -68,10 +68,13 @@ export function SettingsModal({
   const [localSpinDuration, setLocalSpinDuration] = useState(settings.spinDuration);
   const [localWheelImage, setLocalWheelImage] = useState(settings.wheelImage || '');
   const [localWheelMode, setLocalWheelMode] = useState(settings.wheelMode || 'colors');
+  const [localAutoAnnounceWinner, setLocalAutoAnnounceWinner] = useState(settings.autoAnnounceWinner ?? false);
+  const [localChatAnnouncementMessage, setLocalChatAnnouncementMessage] = useState(settings.chatAnnouncementMessage || '🎉 CONGRATULATIONS {winner}! 🎉 You won the giveaway!');
   const [isWheelCustomizationExpanded, setIsWheelCustomizationExpanded] = useState(false);
   const [isSpinDurationExpanded, setIsSpinDurationExpanded] = useState(false);
   const [isWinnerTextExpanded, setIsWinnerTextExpanded] = useState(false);
   const [isWeightsExpanded, setIsWeightsExpanded] = useState(false);
+  const [isAnnouncementExpanded, setIsAnnouncementExpanded] = useState(false);
 
   const handleColorChange = (index: number, color: string) => {
     const newColors = [...localColors];
@@ -102,7 +105,9 @@ export function SettingsModal({
       winnerText: localWinnerText,
       spinDuration: localSpinDuration,
       wheelImage: localWheelImage,
-      wheelMode: localWheelMode
+      wheelMode: localWheelMode,
+      autoAnnounceWinner: localAutoAnnounceWinner,
+      chatAnnouncementMessage: localChatAnnouncementMessage
     });
     onClose();
   };
@@ -344,6 +349,75 @@ export function SettingsModal({
                   👁️ Preview Celebration
                 </Button>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Winner Announcement Settings */}
+        <div className="space-y-4">
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setIsAnnouncementExpanded(!isAnnouncementExpanded)}
+          >
+            <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+              Winner Announcement
+            </h3>
+            <span className="text-2xl text-[var(--text-secondary)]">
+              {isAnnouncementExpanded ? '▼' : '▶'}
+            </span>
+          </div>
+          
+          <p className="text-[var(--text-secondary)]">
+            Control whether the bot automatically announces the winner in chat.
+          </p>
+
+          {isAnnouncementExpanded && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="autoAnnounceWinner"
+                  checked={localAutoAnnounceWinner}
+                  onChange={(e) => setLocalAutoAnnounceWinner(e.target.checked)}
+                  className="w-4 h-4 text-[var(--accent-primary)] bg-[var(--bg-tertiary)] border-[var(--border-color)] rounded focus:ring-[var(--accent-primary)] focus:ring-2"
+                />
+                <label htmlFor="autoAnnounceWinner" className="text-[var(--text-primary)] font-medium">
+                  Auto-announce winner in chat
+                </label>
+              </div>
+              
+              {localAutoAnnounceWinner && (
+                <div className="space-y-3 pl-7 border-l-2 border-[var(--accent-primary)]">
+                  <label className="block text-sm font-medium text-[var(--text-primary)]">
+                    Chat Announcement Message
+                  </label>
+                  
+                  <textarea
+                    value={localChatAnnouncementMessage}
+                    onChange={(e) => setLocalChatAnnouncementMessage(e.target.value)}
+                    placeholder="🎉 CONGRATULATIONS {winner}! 🎉 You won the giveaway!"
+                    rows={3}
+                    className={cn(
+                      "w-full px-4 py-3 text-base resize-vertical",
+                      "bg-[var(--bg-tertiary)] text-[var(--text-primary)]",
+                      "border border-[var(--border-color)] rounded-lg",
+                      "transition-all duration-300 ease-in-out",
+                      "focus:outline-none focus:border-[var(--accent-primary)]",
+                      "focus:shadow-[0_0_0_3px_rgba(145,70,255,0.1)]",
+                      "placeholder:text-[var(--text-secondary)]",
+                      "font-inherit"
+                    )}
+                  />
+                  
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Use {'{winner}'} to insert the winner&apos;s username. This message will be sent to your Twitch chat when someone wins.
+                  </p>
+                </div>
+              )}
+              
+              <p className="text-xs text-[var(--text-secondary)] pl-7">
+                When enabled, the bot will automatically send a message to chat announcing the winner. This requires you to be connected to Twitch chat.
+              </p>
             </div>
           )}
         </div>
