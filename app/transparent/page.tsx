@@ -50,7 +50,9 @@ export default function TransparentMode() {
     obs,
     onSendChatMessage: twitch.sendChatMessage,
     onNotification: (message, type) => notifications.addNotification(message, type),
-    onRemoveParticipant: wheel.removeParticipant
+    onRemoveParticipant: wheel.removeParticipant,
+    onClearAll: wheel.clearAll,
+    onUpdateKeyword: twitch.setEntryKeyword
   });
 
   // Debug: Log chatCommands creation
@@ -70,8 +72,24 @@ export default function TransparentMode() {
       setShowWinner(winner);
       playCongratsSound();
       celebrationConfetti();
+      
+      // Auto-announce winner to chat if enabled
+      if (wheel.settings.autoAnnounceWinner && twitch.isConnected) {
+        console.log('Transparent page: Attempting to announce winner to chat:', winner);
+        console.log('Transparent page: Twitch connection status:', twitch.connectionStatus);
+        console.log('Transparent page: Twitch isConnected:', twitch.isConnected);
+        const customMessage = wheel.settings.chatAnnouncementMessage.replace('{winner}', winner);
+        const chatSent = twitch.sendChatMessage(customMessage);
+        if (chatSent) {
+          notifications.addNotification(`📢 Winner announced to chat: ${winner}`, 'success');
+        } else {
+          notifications.addNotification(`❌ Failed to announce winner to chat. Check console for details.`, 'error');
+        }
+      } else if (wheel.settings.autoAnnounceWinner && !twitch.isConnected) {
+        notifications.addNotification(`❌ Cannot announce winner: not connected to Twitch chat`, 'warning');
+      }
     }, playTickSound);
-  }, [wheel, playCongratsSound, celebrationConfetti, playTickSound]);
+  }, [wheel, playCongratsSound, celebrationConfetti, playTickSound, twitch, notifications]);
 
   // Set up Twitch chat message handler
   useEffect(() => {

@@ -319,14 +319,23 @@ export function useTwitch(): UseTwitchReturn {
   }, []);
 
   const sendChatMessage = useCallback((message: string) => {
+    console.log('sendChatMessage called with:', message);
+    console.log('Socket exists:', !!socketRef.current);
+    console.log('Is connected:', isConnected);
+    console.log('User exists:', !!user);
+    console.log('User login:', user?.login);
+    
     if (!socketRef.current || !isConnected || !user) {
       console.warn('Cannot send chat message: not connected to Twitch chat. Message was:', message);
+      console.warn('Socket:', !!socketRef.current, 'Connected:', isConnected, 'User:', !!user);
       return false;
     }
 
     try {
-      socketRef.current.send(`PRIVMSG #${user.login} :${message}\r\n`);
-      console.log('Sent chat message:', message);
+      const twitchMessage = `PRIVMSG #${user.login} :${message}\r\n`;
+      console.log('Sending raw Twitch message:', JSON.stringify(twitchMessage));
+      socketRef.current.send(twitchMessage);
+      console.log('Message sent to Twitch WebSocket successfully');
       return true;
     } catch (error) {
       console.error('Failed to send chat message:', error);

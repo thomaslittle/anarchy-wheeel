@@ -68,12 +68,21 @@ export default function Home() {
       celebrationConfetti();
       
       // Auto-announce winner to chat if enabled
+      console.log('Main page: Winner announcement check:', {
+        autoAnnounceWinner: wheel.settings.autoAnnounceWinner,
+        twitchConnected: twitch.isConnected,
+        winner: winner,
+        chatMessage: wheel.settings.chatAnnouncementMessage
+      });
+      
       if (wheel.settings.autoAnnounceWinner && twitch.isConnected) {
-        console.log('Attempting to announce winner to chat:', winner);
-        console.log('Twitch connection status:', twitch.connectionStatus);
-        console.log('Twitch isConnected:', twitch.isConnected);
+        console.log('Main page: Attempting to announce winner to chat:', winner);
+        console.log('Main page: Twitch connection status:', twitch.connectionStatus);
+        console.log('Main page: Twitch isConnected:', twitch.isConnected);
         const customMessage = wheel.settings.chatAnnouncementMessage.replace('{winner}', winner);
+        console.log('Main page: Sending chat message:', customMessage);
         const chatSent = twitch.sendChatMessage(customMessage);
+        console.log('Main page: Chat message sent result:', chatSent);
         if (chatSent) {
           notifications.addNotification(`📢 Winner announced to chat: ${winner}`, 'success');
         } else {
@@ -81,6 +90,8 @@ export default function Home() {
         }
       } else if (wheel.settings.autoAnnounceWinner && !twitch.isConnected) {
         notifications.addNotification(`❌ Cannot announce winner: not connected to Twitch chat`, 'warning');
+      } else if (!wheel.settings.autoAnnounceWinner) {
+        console.log('Main page: Auto-announce is disabled in settings');
       }
     }, playTickSound);
   }, [wheel, playCongratsSound, celebrationConfetti, playTickSound, twitch, notifications]);
